@@ -1,0 +1,3305 @@
+<!doctype html>
+<!-- Ohne Doctype laeuft die Datei im Quirks-Modus. Dort erben Tabellen
+     color nicht von ihren Vorfahren, sondern nehmen die Dokumentfarbe —
+     im dunklen Thema also schwarz auf schwarz. -->
+<title>Souffleur</title>
+
+<style id="app-css">
+/* ============================================================
+   SOUFFLEUR
+   Gestaltung nach Redaktionslogik: Papierweiß, Haarlinien,
+   eine Signalfarbe, keine runden Ecken. Die Schriftrollen sind
+   Variablen; belegt werden sie im Stylesheet, nicht zur Laufzeit.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Schriften
+   Die Rollen unten sind mit neutralen Familiennamen belegt
+   ("Souffleur Display" usw.). Diese Namen sind absichtlich
+   nirgends definiert: Wer eigene Schriften einsetzen will, legt
+   neben diese Datei eine fonts.local.js, die sie per @font-face
+   an lokal installierte Schnitte bindet. Fehlt die Datei, greift
+   still die naechste Familie im Stapel.
+   ------------------------------------------------------------ */
+
+:root {
+  /* Schriftrollen. Zuerst der Platzhalter fuer eigene Schriften,
+     dann freie Alternativen, dann Systemschriften. */
+  --font-display: "Souffleur Display", "Fraunces", "Playfair Display", "Iowan Old Style", Georgia, serif;
+  --font-serif:   "Souffleur Text", "Newsreader", "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --font-ui:      "Souffleur UI", "IBM Plex Sans", "Public Sans", system-ui, -apple-system, sans-serif;
+  --font-mono:    "Souffleur Mono", "Iosevka", "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-plakat:  "Souffleur Poster", "League Gothic", "Oswald", "Archivo Narrow", Impact, sans-serif;
+  --font-geo:     "Souffleur Geo", "Schibsted Grotesk", "Archivo", "IBM Plex Sans", system-ui, sans-serif;
+  --font-kicker:  var(--font-ui);
+
+  /* Papier */
+  --ground:     #E9E8E4;
+  --panel:      #FBFAF8;
+  --raise:      #FFFFFF;
+  --sunken:     #F2F1ED;
+  --ink:        #100F0E;
+  --ink-2:      #44423C;
+  --muted:      #8B887F;
+  --rule:       #D6D3CC;
+  --rule-soft:  #E7E5DF;
+  --rule-hard:  #100F0E;
+  --accent:     #E2001A;
+  --accent-ink: #FFFFFF;
+  --accent-soft:rgba(226, 0, 26, .075);
+  --shadow:     0 1px 0 rgba(16,15,14,.06), 0 10px 30px rgba(16,15,14,.09);
+  --shadow-lift:0 1px 0 rgba(16,15,14,.10), 0 24px 60px rgba(16,15,14,.17);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:     #0E0E0D;
+    --panel:      #171716;
+    --raise:      #201F1D;
+    --sunken:     #131312;
+    --ink:        #F4F2EC;
+    --ink-2:      #BAB7AE;
+    --muted:      #85827A;
+    --rule:       #32302B;
+    --rule-soft:  #232220;
+    --rule-hard:  #6A665D;
+    --accent:     #FF4A3A;
+    --accent-ink: #12100F;
+    --accent-soft:rgba(255, 74, 58, .12);
+    --shadow:     0 1px 0 rgba(0,0,0,.5), 0 10px 30px rgba(0,0,0,.5);
+    --shadow-lift:0 1px 0 rgba(0,0,0,.6), 0 24px 60px rgba(0,0,0,.65);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:     #0E0E0D;
+  --panel:      #171716;
+  --raise:      #201F1D;
+  --sunken:     #131312;
+  --ink:        #F4F2EC;
+  --ink-2:      #BAB7AE;
+  --muted:      #85827A;
+  --rule:       #32302B;
+  --rule-soft:  #232220;
+  --rule-hard:  #6A665D;
+  --accent:     #FF4A3A;
+  --accent-ink: #12100F;
+  --accent-soft:rgba(255, 74, 58, .12);
+  --shadow:     0 1px 0 rgba(0,0,0,.5), 0 10px 30px rgba(0,0,0,.5);
+  --shadow-lift:0 1px 0 rgba(0,0,0,.6), 0 24px 60px rgba(0,0,0,.65);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  height: 100vh;
+  overflow: hidden;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Redaktionelle Mikro-Auszeichnung */
+.kicker {
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .19em;
+  word-spacing: .19em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- Kopfleiste ---------- */
+
+.app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 18px;
+  height: 54px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--rule-hard);
+}
+
+.brand { display: flex; align-items: baseline; gap: 10px; user-select: none; }
+.brand b {
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1;
+}
+.brand .rule-mark {
+  width: 16px; height: 3px;
+  background: var(--accent);
+  align-self: center;
+}
+
+.tools { display: flex; align-items: center; gap: 12px; }
+.tools.right { margin-left: auto; }
+.sep { width: 1px; height: 22px; background: var(--rule); }
+
+.btn {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  padding: 6px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.btn:hover { background: var(--sunken); color: var(--ink); }
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--panel);
+  border-color: var(--ink);
+  font-weight: 600;
+  letter-spacing: .04em;
+  padding: 7px 16px;
+}
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.field { display: flex; align-items: center; gap: 8px; }
+.field > .kicker { white-space: nowrap; }
+
+select.ctl {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--raise);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 5px 7px;
+  cursor: pointer;
+}
+
+.toggle {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--ink-2);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.toggle input { accent-color: var(--accent); margin: 0; cursor: pointer; }
+
+/* ---------- Zwei Spalten ---------- */
+
+.main {
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) minmax(430px, 1.12fr);
+  min-height: 0;
+}
+
+.col-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 22px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.docname {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docname::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+.docname.is-dirty { color: var(--ink); }
+.docname.is-dirty::before { background: var(--accent); border-color: var(--accent); }
+.docname.no-file { color: var(--muted); font-style: italic; }
+
+.col-head .legend { margin-left: auto; display: flex; gap: 15px; }
+.col-head .legend i {
+  font-style: normal;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.swatch { width: 10px; height: 10px; display: inline-block; }
+.swatch.stage { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.swatch.note  { border: 1px dashed var(--rule); }
+
+/* --- Skript --- */
+
+.script {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
+  border-right: 1px solid var(--rule-hard);
+  background: var(--panel);
+}
+
+.editor-wrap { position: relative; min-height: 0; overflow: hidden; }
+
+/* Textfeld und Markierung teilen exakt dieselbe Typografie,
+   damit die Zeilenumbrüche deckungsgleich fallen. */
+.editor-wrap textarea,
+.editor-wrap .hl {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.8;
+  letter-spacing: 0;
+  padding: 14px 22px 45vh;
+  border: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  tab-size: 2;
+}
+
+.editor-wrap textarea {
+  position: relative; z-index: 1;
+  display: block; width: 100%; height: 100%;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  overflow-y: auto;
+  caret-color: var(--accent);
+}
+.editor-wrap textarea:focus { outline: none; }
+.editor-wrap textarea::selection { background: var(--accent-soft); }
+
+.editor-wrap .hl {
+  position: absolute; inset: 0; z-index: 0;
+  overflow: hidden; pointer-events: none;
+  color: transparent;
+}
+.hl-line { display: block; }
+.hl-line.is-stage {
+  background: var(--accent-soft);
+  box-shadow: -10px 0 0 0 var(--accent-soft), inset 2px 0 0 0 var(--accent);
+}
+.hl-line.is-break { border-bottom: 1px solid var(--rule); }
+/* Kopfdaten sind weder Bühne noch Souffleur – eigene, stille Kategorie */
+.hl-line.is-meta {
+  background: var(--rule-soft);
+  box-shadow: -10px 0 0 0 var(--rule-soft), inset 2px 0 0 0 var(--rule);
+}
+
+.script-foot {
+  display: flex; align-items: center; gap: 18px;
+  padding: 9px 22px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.script-foot .fonts { margin-left: auto; text-align: right; }
+.script-foot .saved { color: var(--accent); transition: opacity .5s; opacity: 0; }
+
+/* --- Bühne --- */
+
+.house {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  background: var(--ground);
+}
+
+.stage-wrap {
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  padding: 22px 28px 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+  background: #fff;
+}
+.stage-scale { transform-origin: top left; }
+
+.prompt-box {
+  margin: 22px 0 24px;
+  padding: 13px 0 0;
+  border-top: 2px solid var(--rule-hard);
+}
+.prompt-label { margin-bottom: 9px; }
+.prompt-text {
+  font-family: var(--font-serif);
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 64ch;
+  hyphens: auto;
+  text-wrap: pretty;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+.prompt-text p { margin: 0 0 .68em; }
+.prompt-text p:last-child { margin-bottom: 0; }
+.prompt-text ul, .prompt-text ol { margin: 0 0 .68em; padding-left: 1.1em; }
+.prompt-text.empty { font-style: italic; color: var(--muted); font-size: 15px; }
+
+/* Miniaturen */
+.rail {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 13px 28px 15px;
+  border-top: 1px solid var(--rule-hard);
+  background: var(--panel);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.thumb {
+  flex: 0 0 auto; border: 0; padding: 0; background: transparent;
+  cursor: pointer; display: grid; gap: 6px; justify-items: start;
+}
+.thumb-frame {
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color .14s;
+  background: #fff;
+}
+.thumb[aria-current="true"] .thumb-frame { outline-color: var(--accent); }
+.thumb-num {
+  font-family: var(--font-ui);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .12em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.thumb[aria-current="true"] .thumb-num { color: var(--accent); }
+
+/* Warnfarben sind eigenständig, nicht der Akzent: Messing heißt
+   „gedrängt", Rot heißt „passt nicht mehr". */
+.pct { margin-left: 6px; font-weight: 700; letter-spacing: .06em; }
+.is-tight .pct { color: var(--brass); }
+.is-over  .pct { color: var(--accent); }
+
+.tight-flag {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: .19em; text-transform: uppercase;
+  color: var(--brass);
+  word-spacing: .19em;
+}
+.tight-flag.is-over { color: var(--accent); }
+.tight-flag.show { display: inline-flex; }
+.tight-flag::before {
+  content: "";
+  width: 7px; height: 7px;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.stat-tight {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--brass);
+  cursor: pointer;
+  padding: 0;
+}
+.stat-tight:hover { text-decoration: underline; }
+.stat-tight[hidden] { display: none; }
+
+/* ============================================================
+   DIE FOLIE
+   Deck-Themes sind vom App-Theme unabhängig – das hier sieht
+   das Publikum. Alle Maße in em, damit Auto-Fit greift.
+   ============================================================ */
+
+.slide {
+  --s-bg:      #FFFFFF;
+  --s-ink:     #100F0E;
+  --s-ink-2:   #4A4842;
+  --s-muted:   #5A5852;   /* 7,1:1 – Beamer verzeihen kein blasses Grau */
+  --s-accent:  #E2001A;
+  --s-rule:    #100F0E;
+  --s-hair:    #D6D3CC;
+  --s-code:    rgba(16,15,14,.055);
+  --s-display: var(--font-display);
+  --s-body:    var(--font-serif);
+  /* Formateinheit: fest, vom Auto-Fit unberuehrt. Der Satzspiegel ist
+     eine Eigenschaft des Formats, nicht des Schriftgrads – waeren die
+     Raender in em, schrumpften sie mit und eine ueberfuellte Folie
+     bekaeme engere Raender, statt mehr Luft. */
+  --s-unit: 47.4px;
+  --s-pad-x:      calc(var(--s-unit) * 1.9);
+  --s-pad-top:    calc(var(--s-unit) * 1.2);
+  --s-pad-bottom: calc(var(--s-unit) * 1.8);
+
+  position: relative;
+  background: var(--s-bg);
+  color: var(--s-ink);
+  font-family: var(--s-body);
+  overflow: hidden;
+}
+
+.slide[data-deck="kontra"] {
+  --s-bg:     #100F0E;
+  --s-ink:    #F6F4EE;
+  --s-ink-2:  #C0BCB2;
+  --s-muted:  #A09D97;   /* 7,1:1 auf dunklem Grund */
+  --s-accent: #FF4A3A;
+  --s-rule:   #F6F4EE;
+  --s-hair:   #34322D;
+  --s-code:   rgba(246,244,238,.08);
+}
+
+/* Das Plakat-Thema erwartet eine Schmalschrift – sie verträgt
+   deutlich mehr Größe und will versal gesetzt werden. */
+.slide[data-deck="plakat"] {
+  --s-bg:     #F1EFE9;
+  --s-ink:    #100F0E;
+  --s-ink-2:  #45433D;
+  --s-muted:  #51504C;   /* 7,0:1 */
+  --s-accent: #E2001A;
+  --s-rule:   #100F0E;
+  --s-hair:   #CFCCC4;
+  --s-code:   rgba(16,15,14,.06);
+  --s-display: var(--font-plakat);
+  --s-body:    var(--font-ui);
+}
+.slide[data-deck="plakat"] h1 {
+  font-size: 3.05em;
+  line-height: .9;
+  letter-spacing: .005em;
+  text-transform: uppercase;
+}
+.slide[data-deck="plakat"] .slide-content[data-layout="title"] h1 { font-size: 4.3em; }
+.slide[data-deck="plakat"] h2 { font-size: 1.28em; letter-spacing: 0; }
+.slide[data-deck="plakat"] h3 { text-transform: uppercase; letter-spacing: .02em; }
+.slide[data-deck="plakat"] blockquote { font-size: 2.1em; line-height: 1.02; text-transform: uppercase; }
+
+/* In einem Firmenthema ist die Hausfarbe die Identitaet, nicht Zierrat.
+   Die Signalreduktion von fuenf Auszeichnungen auf zwei war hier zu
+   pauschal: ohne Farbe in der Dachzeile bleibt nur ein duenner Balken. */
+.slide[data-deck="professional"] {
+  --s-kicker-color: var(--s-accent);
+  --s-bg:     #FFFFFF;
+  --s-ink:    #11161B;
+  --s-ink-2:  #3D454C;
+  --s-muted:  #52595F;   /* 7,1:1 */
+  --s-accent: #00538F;
+  --s-rule:   #11161B;
+  --s-hair:   #DCE2E7;
+  --s-code:   rgba(0,83,143,.07);
+  --s-display: var(--font-geo);
+  /* Groteske ueber Serifentext – die klassische Geschaeftsbericht-Paarung.
+     Vorher stand hier Groteske ueber Groteske: das einzige Thema ohne
+     Kontrast der Art, und die Kapitaelchen-Dachzeile stand als einziges
+     Serifenelement verwaist darin. Der Unterschied zu Heft ist damit auch
+     ein Unterschied der Machart, nicht bloss der Farbe. */
+  --s-body:    var(--font-serif);
+}
+
+.slide-content {
+  position: absolute;
+  inset: 0;
+  padding: var(--s-pad-top) var(--s-pad-x) var(--s-pad-bottom);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .6em;
+}
+
+.slide-content[data-layout="title"]   { justify-content: flex-end; gap: .34em;
+  padding-bottom: calc(var(--s-unit) * 2.6); }
+.slide-content[data-layout="body"]    { justify-content: flex-start; }
+.slide-content[data-layout="quote"]   { justify-content: center; }
+.slide-content[data-layout="image"]   { padding: 0; gap: 0; }
+.slide-content[data-layout="gallery"] { justify-content: center; }
+.slide-content[data-layout="empty"]   { justify-content: flex-end; }
+
+/* --- Typografische Hierarchie einer Zeitschriftenseite --- */
+
+.slide h1, .slide h2, .slide h3 {
+  font-family: var(--s-display);
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* Schlagzeile */
+/* font-variation-settings gilt nur fuer variable Schriften: die bekommen
+   damit 900/700. Statische Schnitte ignorieren es und bleiben bei der
+   Stufe aus der font-weight-Bindung. Eine Regel, jedes Register. */
+.slide h1 {
+  font-size: 2.83em;
+  font-weight: 700;
+  font-variation-settings: "wght" 900;
+  line-height: calc(.98 * var(--s-lead, 1));
+  letter-spacing: calc(-.021em * var(--s-fit, 1));
+}
+/* Keine eigene Stufe fuer die Titel-Schlagzeile: 4,00 em zwang die Folie
+   auf 77 Prozent und zog Dachzeile und Vorspann mit runter – gerendert war
+   die Zeile danach nicht groesser als vorher. Auf einer Titelfolie steht
+   weniger, also laesst der Fitter sie ohnehin gross. Die Dominanz kommt
+   vom kleineren Vorspann. */
+.slide-content[data-layout="title"] h2 { font-size: 1.41em; }
+
+/* Vorspann */
+.slide h2 {
+  font-size: 2em;
+  font-weight: 400;
+  font-variation-settings: "wght" 700;
+  line-height: calc(1.18 * var(--s-lead, 1));
+  letter-spacing: calc(-.008em * var(--s-fit, 1));
+  color: var(--s-ink);
+  max-width: 24em;
+}
+
+/* Ein h2 ist nur dann Vorspann, wenn eine Schlagzeile darübersteht.
+   Steht es allein – und mit »Folie je Überschrift« beginnt jedes ##
+   eine eigene Folie –, ist es selbst die Schlagzeile und trägt
+   Primärfarbe. Vorher war es nach Tag gestaltet, nicht nach Rolle:
+   die Überschrift stand schwächer als die Tabelle, die sie erklärt. */
+.slide-content h1 ~ h2 { color: var(--s-ink-2); }
+
+/* Zwischentitel */
+.slide h3 {
+  font-size: 1.41em;
+  font-weight: 700;
+  line-height: calc(1.25 * var(--s-lead, 1));
+  letter-spacing: calc(-.005em * var(--s-fit, 1));
+}
+
+/* Dachzeile – mit Signalstrich darüber, wie im Heft */
+/* Dachzeile: zwei Auszeichnungen statt fuenf. Der Balken traegt die
+   Signalfarbe, die Zeile selbst steht in Textfarbe. Wortabstand waechst
+   mit der Sperrung mit, sonst verschmelzen die Wortgrenzen. */
+.slide h4, .slide h5, .slide h6 {
+  font-family: var(--s-kicker-font, var(--font-kicker));
+  font-size: var(--s-kicker-size, .71em);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: var(--s-kicker-track, .13em);
+  word-spacing: var(--s-kicker-track, .13em);
+  text-transform: var(--s-kicker-case, uppercase);
+  font-variant-numeric: proportional-nums;
+  color: var(--s-kicker-color, var(--s-ink));
+  margin: 0;
+  padding-top: .85em;
+  position: relative;
+}
+.slide h4::before, .slide h5::before, .slide h6::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 2.6em; height: 2px;
+  background: var(--s-accent);
+}
+
+.slide p {
+  text-wrap: pretty;
+  margin: 0;
+  font-size: 1em;
+  line-height: calc(1.38 * var(--s-lead, 1));
+  max-width: 33em;
+}
+
+.slide ul, .slide ol {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  font-size: 1em;
+  line-height: calc(1.3 * var(--s-lead, 1));
+  max-width: 31em;
+  counter-reset: si;
+}
+/* Marken haengen im Rand, damit der Text auf derselben Achse steht
+   wie die Ueberschrift darueber. Eingerueckte Listen brechen die Kante. */
+.slide li {
+  text-wrap: pretty;
+  position: relative;
+  padding: .34em 0 .34em 0;
+  border-top: 1px solid var(--s-hair);
+}
+.slide li:first-child { border-top: 0; padding-top: .1em; }
+.slide ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.15em; top: .72em;
+  width: .42em; height: 2px;
+  background: var(--s-accent);
+}
+.slide ul > li:first-child::before { top: .48em; }
+.slide ol { counter-reset: si; }
+.slide ol > li { counter-increment: si; }
+.slide ol > li::before {
+  content: counter(si);
+  position: absolute;
+  left: -1.4em; top: .38em;
+  font-family: var(--font-ui);
+  font-size: .71em;
+  font-weight: 700;
+  color: var(--s-accent);
+  /* Eine Ordnungszahl laeuft in der Zeile, sie steht nicht in einer Spalte */
+  font-variant-numeric: proportional-nums;
+}
+.slide ol > li:first-child::before { top: .1em; }
+.slide li ul, .slide li ol {
+  margin-top: .3em;
+  font-size: .85em;
+  color: var(--s-ink-2);
+}
+.slide li ul, .slide li ol { padding-left: 1.2em; }
+.slide li ul > li, .slide li ol > li { border-top: 0; padding-top: .12em; padding-bottom: .12em; }
+.slide li ul > li::before { background: var(--s-muted); }
+
+/* Zitat */
+.slide blockquote {
+  margin: 0;
+  font-family: var(--s-display);
+  font-size: 2em;
+  font-weight: 400;
+  line-height: calc(1.12 * var(--s-lead, 1));
+  letter-spacing: -.014em;
+  max-width: 19em;
+  text-wrap: balance;
+  padding-top: .42em;
+  border-top: 3px solid var(--s-accent);
+}
+.slide blockquote cite {
+  display: block;
+  margin-top: .5em;
+  font-family: var(--font-ui);
+  font-size: .355em;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .2em;
+  word-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--s-muted);
+}
+
+.slide pre {
+  margin: 0;
+  background: var(--s-code);
+  padding: .75em .9em;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: .85em;
+  line-height: calc(1.5 * var(--s-lead, 1));
+  max-width: 100%;
+}
+.slide pre code { font-family: inherit; background: none; padding: 0; font-size: 1em; }
+.slide code {
+  font-family: var(--font-mono);
+  font-size: .84em;
+  background: var(--s-code);
+  padding: .08em .3em;
+}
+
+.slide a { color: var(--s-accent); text-underline-offset: .16em; text-decoration-thickness: .05em; }
+.slide strong { font-weight: 700; }
+.slide em { font-style: italic; }
+
+.slide table {
+  color: inherit;
+  border-collapse: collapse;
+  font-size: 1em;
+  width: 100%;
+  max-width: 34em;
+  font-variant-numeric: tabular-nums;
+}
+/* Tabellenköpfe tragen Inhalt, keine Beschriftung – die Hierarchie
+   kommt aus Versalien, Sperrung und Linie, nicht aus blassem Grau. */
+.slide thead th {
+  font-family: var(--font-ui);
+  font-size: .71em;
+  font-weight: 700;
+  letter-spacing: .16em;
+  word-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--s-ink-2);
+  border-bottom: 2px solid var(--s-rule);
+}
+.slide th, .slide td {
+  /* Zwei Spalten, also rund 24 Zeichen – kurze Zeile will engeren Durchschuss */
+  line-height: calc(1.2 * var(--s-lead, 1));
+  text-align: left;
+  padding: .5em .8em .5em 0;
+  border-bottom: 1px solid var(--s-hair);
+}
+.slide tbody tr:last-child td { border-bottom: 0; }
+
+.slide figure { margin: 0; display: flex; flex-direction: column; min-height: 0; }
+.slide figure img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.slide-content[data-layout="image"] figure { position: absolute; inset: 0; }
+.slide-content[data-layout="image"] figure img {
+  width: 100%; height: 100%;
+  max-width: none; max-height: none;
+  object-fit: cover;
+}
+.gallery-grid { display: grid; gap: .45em; min-height: 0; flex: 1; }
+.gallery-grid img { width: 100%; height: 100%; object-fit: cover; }
+
+.img-missing {
+  display: grid; place-items: center;
+  padding: 1.3em;
+  border: 1px dashed var(--s-hair);
+  color: var(--s-muted);
+  font-family: var(--font-mono);
+  font-size: .46em;
+  text-align: center;
+  min-height: 4.5em;
+}
+
+/* Kolumnentitel wie im Heft: Blattangabe links, Ziffer rechts */
+.slide-foot {
+  word-spacing: .1em;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  position: absolute;
+  left: var(--s-pad-x);
+  right: var(--s-pad-x);
+  bottom: calc(var(--s-unit) * 0.65);
+  display: flex;
+  align-items: baseline;
+  gap: 1.2em;
+  font-family: var(--font-ui);
+  font-size: .5em;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--s-muted);
+}
+/* Die Blattziffer laeuft in der Zeile mit, sie steht nicht in einer Spalte */
+.slide-foot .num { margin-left: auto; font-variant-numeric: oldstyle-nums proportional-nums; }
+.slide-foot .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-hint {
+  font-family: var(--font-mono);
+  font-size: .5em;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--s-muted);
+}
+
+/* ============================================================
+   PRÄSENTATION
+   ============================================================ */
+
+.present { position: fixed; inset: 0; z-index: 100; background: #000; display: grid; place-items: center; }
+.present[hidden] { display: none; }
+.present-stage { position: relative; }
+.present.blackout .present-stage { visibility: hidden; }
+
+.present-notes {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  max-height: 33vh; overflow-y: auto;
+  padding: 18px 32px 22px;
+  background: rgba(6,6,6,.95);
+  color: #DEDBD3;
+  font-family: var(--font-serif);
+  font-size: 19px; line-height: 1.55;
+  border-top: 2px solid #E2001A;
+}
+.present-notes[hidden] { display: none; }
+.present-notes p { margin: 0 0 .6em; max-width: 62ch; hyphens: auto; text-wrap: pretty; }
+.present-notes p:last-child { margin-bottom: 0; }
+.present-notes ul, .present-notes ol { margin: 0 0 .6em; padding-left: 1.2em; }
+.present-notes .nlabel {
+  font-family: var(--font-ui);
+  font-size: 9.5px; font-weight: 600;
+  letter-spacing: .19em; text-transform: uppercase;
+  color: #86837B; margin-bottom: 8px;
+  word-spacing: .19em;
+}
+
+.present-hud {
+  position: fixed; top: 18px; right: 22px;
+  display: flex; align-items: center; gap: 15px;
+  font-family: var(--font-ui);
+  font-size: 12px; font-weight: 600; letter-spacing: .1em;
+  color: rgba(255,255,255,.45);
+  font-variant-numeric: tabular-nums;
+  background: rgba(6,6,6,.62);
+  padding: 7px 14px;
+}
+.present-hud .timer.running { color: #E2001A; }
+.present-hud kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px; font-weight: 400; letter-spacing: 0;
+  border: 1px solid rgba(255,255,255,.22);
+  padding: 1px 5px;
+}
+.present-progress { position: fixed; left: 0; bottom: 0; height: 3px; background: #E2001A; transition: width .2s; z-index: 101; }
+
+/* ============================================================
+   REFERENTENANSICHT
+   Läuft auf dem Laptop, während das Publikumsfenster auf dem
+   Beamer nur die Folie zeigt. Das hier sieht niemand sonst.
+   ============================================================ */
+
+.console {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 26px;
+  padding: 24px 26px;
+  background: #0B0B0A;
+}
+.console[hidden] { display: none; }
+
+.con-col { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0; }
+
+.con-label {
+  font-family: var(--font-ui);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: .19em; text-transform: uppercase;
+  color: #7C7A73;
+  word-spacing: .19em;
+}
+
+.con-slide {
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 12px 44px rgba(0,0,0,.7);
+  flex: 0 0 auto;
+}
+.con-slide > div { transform-origin: top left; }
+.con-slide.is-last { display: grid; place-items: center; }
+.con-slide.is-last span {
+  font-family: var(--font-ui);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .19em; text-transform: uppercase;
+  color: #55534E;
+  word-spacing: .19em;
+}
+
+/* Sprunglesen unter Druck: engerer Durchschuss bindet die Zeile,
+   und ohne Massbegrenzung liefe die Spalte auf grossen Schirmen
+   auf ueber hundert Zeichen. */
+.con-notes {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.45;
+  color: #DEDBD3;
+  max-width: 62ch;
+  hyphens: auto;
+  text-wrap: pretty;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+.con-notes p { margin: 0 0 .62em; }
+.con-notes p:last-child { margin-bottom: 0; }
+.con-notes ul, .con-notes ol { margin: 0 0 .62em; padding-left: 1.2em; }
+
+.con-meta {
+  margin-top: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  border-top: 2px solid var(--accent);
+  padding-top: 13px;
+}
+.con-time {
+  font-family: var(--font-ui);
+  font-size: 40px; font-weight: 700;
+  letter-spacing: .01em;
+  color: #F2F0EA;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.con-time.running { color: var(--accent); }
+.con-count {
+  font-family: var(--font-ui);
+  font-size: 14px; font-weight: 600; letter-spacing: .12em;
+  color: #8A8880;
+  font-variant-numeric: tabular-nums;
+}
+.con-pace {
+  font-family: var(--font-ui);
+  font-size: 14px; font-weight: 600; letter-spacing: .06em;
+  color: #8A8880;
+  font-variant-numeric: tabular-nums;
+}
+.con-pace.ahead  { color: #7FA98C; }
+.con-pace.behind { color: var(--accent); }
+
+.con-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #5E5C57;
+  text-align: right;
+}
+
+/* ---------- Folienübersicht ----------
+   Liegt nur im Hauptfenster. Das Publikumsfenster zeigt weiter
+   die laufende Folie – Blättern soll niemand mitlesen können. */
+
+.overview {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: #0B0B0A;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  padding: 22px 26px 26px;
+}
+.overview[hidden] { display: none; }
+
+.ov-head { display: flex; align-items: baseline; gap: 16px; }
+.ov-head .ov-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #5E5C57;
+}
+
+.ov-grid {
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+  align-content: start;
+  padding-right: 4px;
+}
+
+.ov-item {
+  border: 0; padding: 0; background: transparent;
+  cursor: pointer;
+  display: grid; gap: 6px; justify-items: start;
+}
+.ov-frame {
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  transition: outline-color .12s;
+}
+.ov-frame > div { transform-origin: top left; }
+.ov-item.is-sel .ov-frame { outline-color: var(--accent); }
+.ov-item.is-now .ov-frame { outline-color: #6E6C66; }
+.ov-item.is-sel.is-now .ov-frame { outline-color: var(--accent); }
+
+.ov-cap {
+  font-family: var(--font-ui);
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .12em;
+  color: #7C7A73;
+  font-variant-numeric: tabular-nums;
+  display: flex; gap: 7px; align-items: baseline;
+  word-spacing: .12em;
+}
+.ov-item.is-sel .ov-cap { color: var(--accent); }
+.ov-cap .now-tag {
+  font-size: 9px; letter-spacing: .18em;
+  color: #6E6C66;
+  word-spacing: .18em;
+}
+
+/* Ohne diese Regeln gewinnt das eigene display gegen [hidden] */
+.present-hud[hidden], .present-stage[hidden], .present-progress[hidden] { display: none; }
+
+/* ============================================================
+   DIALOG
+   ============================================================ */
+
+dialog {
+  border: 1px solid var(--rule-hard);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 0;
+  max-width: 640px;
+  width: calc(100vw - 40px);
+  box-shadow: var(--shadow-lift);
+}
+dialog::backdrop { background: rgba(8,8,8,.55); }
+
+.dlg-head {
+  display: flex; align-items: baseline; gap: 14px;
+  padding: 22px 26px 15px;
+  border-bottom: 2px solid var(--rule-hard);
+}
+.dlg-head h2 {
+  font-family: var(--font-display);
+  font-size: 25px; font-weight: 700; letter-spacing: -.02em;
+  margin: 0;
+}
+.dlg-head .close { margin-left: auto; }
+
+.dlg-body { padding: 20px 26px 26px; max-height: 68vh; overflow-y: auto; }
+.dlg-body h3 { margin: 24px 0 11px; }
+.dlg-body h3:first-child { margin-top: 0; }
+.dlg-body p {
+  margin: 0 0 13px;
+  max-width: 62ch;
+  color: var(--ink-2);
+  font-family: var(--font-serif);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+.rulecard {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-bottom: 20px;
+}
+.rulecard > div { background: var(--panel); padding: 15px 17px; }
+.rulecard b {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: .19em; text-transform: uppercase;
+  margin-bottom: 10px;
+  word-spacing: .19em;
+}
+.rulecard .to-stage b { color: var(--accent); }
+.rulecard .to-note b { color: var(--muted); }
+.rulecard ul { margin: 0; padding-left: 15px; font-size: 13px; color: var(--ink-2); line-height: 1.75; }
+.rulecard code { font-size: 12px; }
+
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 9px 18px; align-items: center; font-size: 13.5px; }
+.keys dt { display: flex; gap: 4px; }
+.keys dd { margin: 0; color: var(--ink-2); }
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--raise);
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  padding: 2px 6px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.dlg-body code { font-family: var(--font-mono); font-size: 12.5px; background: var(--sunken); padding: 1px 5px; }
+
+.fontlist { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; font-size: 13px; align-items: baseline; }
+.fontlist dt { color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: .19em; text-transform: uppercase;
+  word-spacing: .19em;
+}
+.fontlist dd { margin: 0; color: var(--ink); }
+.fontlist .miss { color: var(--muted); font-style: italic; }
+
+/* ============================================================
+   DRUCK
+   ============================================================ */
+
+.printroot { display: none; }
+
+@media print {
+  body { height: auto; overflow: visible; background: #fff; }
+  .app, .present, dialog, .toast { display: none !important; }
+  .printroot { display: block; }
+  .print-page { page-break-after: always; break-after: page; position: relative; overflow: hidden; }
+  .print-page:last-child { page-break-after: auto; break-after: auto; }
+  .stage, .slide { box-shadow: none; }
+
+  /* Handout: Folie oben, Sprechtext darunter. Farben hier fest, damit
+     ein dunkles Systemthema den Ausdruck nicht mitnimmt. */
+  .pn-page {
+    page-break-after: always; break-after: page;
+    display: flex; flex-direction: column; gap: 7mm;
+    color: #111110;
+  }
+  .pn-page:last-child { page-break-after: auto; break-after: auto; }
+  .pn-head {
+    width: 128mm;
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: var(--font-ui);
+    font-size: 8pt; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: #6B6862;
+    border-bottom: 1px solid #C9C6C0;
+    padding-bottom: 3mm;
+  word-spacing: .16em;
+}
+  .pn-head .pn-num { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .pn-slide { overflow: hidden; border: 1px solid #D6D3CC; }
+  .pn-slide > div { transform-origin: top left; }
+  /* 128 mm Satzbreite ergeben bei 10,5 pt rund 70 bis 75 Zeichen.
+     Vorher lief die Zeile ueber die vollen 178 mm, also gegen 100 Zeichen —
+     dort verliert das Auge den Zeilenruecksprung. Durchschuss 13,5 pt
+     statt 16,3: bei diesem Mass bindet engerer Durchschuss die Zeile. */
+  .pn-notes {
+    text-wrap: pretty;
+    font-family: var(--font-serif);
+    font-size: 10.5pt;
+    line-height: 13.5pt;
+    color: #1C1B19;
+    width: 128mm;
+    hyphens: auto;
+    font-variant-numeric: oldstyle-nums proportional-nums;
+  }
+  .pn-notes p { margin: 0 0 .6em; }
+  .pn-notes p:last-child { margin-bottom: 0; }
+  .pn-notes ul, .pn-notes ol { margin: 0 0 .6em; padding-left: 1.2em; }
+  .pn-empty { color: #8B8880; font-style: italic; }
+}
+
+/* ---------- Hinweis ---------- */
+
+.toast {
+  position: fixed; left: 50%; bottom: 28px;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--ink); color: var(--panel);
+  font-size: 13px; padding: 10px 20px;
+  box-shadow: var(--shadow-lift);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 200;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+@media (max-width: 940px) {
+  .main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .script { border-right: 0; border-bottom: 1px solid var(--rule-hard); }
+}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><b>Souffleur</b><span class="rule-mark"></span></div>
+
+    <div class="tools">
+      <label class="field"><span class="kicker">Bühne</span>
+        <select class="ctl" id="deck-theme" aria-label="Foliendesign">
+          <option value="heft">Heft</option>
+          <option value="kontra">Kontra</option>
+          <option value="plakat">Plakat</option>
+          <option value="professional">Professional</option>
+        </select>
+      </label>
+      <label class="field"><span class="kicker">Format</span>
+        <select class="ctl" id="aspect" aria-label="Seitenverhältnis">
+          <option value="16:9">16 : 9</option>
+          <option value="4:3">4 : 3</option>
+        </select>
+      </label>
+      <label class="toggle" title="Jede Überschrift der Ebene 1 und 2 beginnt eine neue Folie">
+        <input type="checkbox" id="split-heading" checked> Folie je Überschrift
+      </label>
+    </div>
+
+    <div class="tools right">
+      <button class="btn" id="btn-new" title="Leeres Dokument – setzt Datei, Puffer und Bilder zurück">Neu</button>
+      <button class="btn" id="btn-open" title="Markdown-Datei öffnen (⌘O)">Öffnen</button>
+      <button class="btn" id="btn-save" title="In dieselbe Datei zurückschreiben (⌘S)">Sichern</button>
+      <button class="btn" id="btn-saveas" title="Unter neuem Namen sichern (⇧⌘S)">Sichern unter</button>
+      <button class="btn" id="btn-export" title="Als eigenständige HTML-Datei exportieren">HTML</button>
+      <button class="btn" id="btn-print" title="Als PDF drucken, eine Seite je Folie">PDF</button>
+      <button class="btn" id="btn-handout" title="PDF mit Sprechtext: Folie oben, Notizen darunter (⇧⌘P)">Handout</button>
+      <span class="sep"></span>
+      <button class="btn" id="btn-help">Hilfe</button>
+      <button class="btn" id="btn-screen">Zweiter Bildschirm</button>
+      <button class="btn btn-primary" id="btn-present">Präsentieren</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="script">
+      <div class="col-head">
+        <span class="kicker">Skript</span>
+        <span class="docname no-file" id="docname">ohne Datei</span>
+        <div class="legend kicker">
+          <i><span class="swatch stage"></span> Bühne</i>
+          <i><span class="swatch note"></span> Souffleur</i>
+        </div>
+      </div>
+      <div class="editor-wrap">
+        <div class="hl" id="hl" aria-hidden="true"></div>
+        <textarea id="ed" spellcheck="false" autocapitalize="off" autocomplete="off"
+                  aria-label="Vortragsskript in Markdown"></textarea>
+      </div>
+      <div class="script-foot kicker">
+        <span id="stat-slides">0 Folien</span>
+        <span id="stat-words">0 Wörter</span>
+        <span id="stat-time">~0 min</span>
+        <button class="stat-tight" id="stat-tight" hidden
+                title="Zur engsten Folie springen"></button>
+        <span class="saved" id="saved">gesichert</span>
+        <span class="fonts" id="fontinfo"></span>
+      </div>
+    </section>
+
+    <section class="house">
+      <div class="col-head">
+        <span class="kicker">Bühne</span>
+        <span class="tight-flag" id="tight-flag" style="margin-left:auto"></span>
+        <span class="kicker" id="pos-label" style="margin-left:12px"></span>
+      </div>
+      <div class="stage-wrap">
+        <div class="stage" id="stage"><div class="stage-scale" id="stage-scale"></div></div>
+        <div class="prompt-box">
+          <div class="prompt-label kicker">Souffleur</div>
+          <div class="prompt-text" id="notes"></div>
+        </div>
+      </div>
+      <div class="rail" id="rail"></div>
+    </section>
+  </div>
+</div>
+
+<div class="present" id="present" hidden>
+  <div class="console" id="console" hidden>
+    <div class="con-col">
+      <div class="con-label">Jetzt</div>
+      <div class="con-slide" id="con-now"></div>
+      <div class="con-meta">
+        <span class="con-time" id="con-time">00:00</span>
+        <span class="con-count" id="con-count"></span>
+        <span class="con-pace" id="con-pace"></span>
+        <span class="con-hint">← → blättern · G Übersicht · T Uhr · R zurücksetzen<br>B Schwarzblende · Esc Ende</span>
+      </div>
+    </div>
+    <div class="con-col">
+      <div class="con-label">Als Nächstes</div>
+      <div class="con-slide" id="con-next"></div>
+      <div class="con-label">Souffleur</div>
+      <div class="con-notes" id="con-notes"></div>
+    </div>
+  </div>
+
+  <div class="present-stage" id="present-stage"></div>
+  <div class="present-hud" id="phud">
+    <span class="timer" id="ptimer">00:00</span>
+    <span id="pcount">1 / 1</span>
+    <kbd>N</kbd><span>Notizen</span>
+    <kbd>G</kbd><span>Übersicht</span>
+    <kbd>Esc</kbd><span>Ende</span>
+  </div>
+  <div class="present-notes" id="pnotes" hidden></div>
+  <div class="present-progress" id="pprogress" style="width:0"></div>
+
+  <div class="overview" id="overview" hidden>
+    <div class="ov-head">
+      <span class="kicker" style="color:#7C7A73">Übersicht</span>
+      <span class="ov-hint">Pfeiltasten wählen · Eingabe springt · G oder Esc zurück</span>
+    </div>
+    <div class="ov-grid" id="ov-grid"></div>
+  </div>
+</div>
+
+<div class="printroot" id="printroot"></div>
+<div class="toast" id="toast"></div>
+
+<dialog id="help">
+  <div class="dlg-head">
+    <h2>Wie Souffleur denkt</h2>
+    <button class="btn close" id="btn-sample" title="Dieses Beispieldokument in den Editor laden">Anleitung laden</button>
+    <button class="btn" id="help-close">Schließen</button>
+  </div>
+  <div class="dlg-body">
+    <p>Du schreibst deinen Vortrag als ein einziges Dokument – so, wie du ihn halten willst.
+       Souffleur entscheidet daraus, was auf die Leinwand kommt und was nur du liest.
+       Layout musst du nie anfassen.</p>
+
+    <div class="rulecard">
+      <div class="to-stage">
+        <b>Auf die Bühne</b>
+        <ul>
+          <li>Überschriften <code>#</code> … <code>######</code></li>
+          <li>Listen <code>-</code> und <code>1.</code></li>
+          <li>Zitate <code>&gt;</code></li>
+          <li>Code <code>```</code></li>
+          <li>Bilder <code>![](…)</code></li>
+          <li>Tabellen <code>| … |</code></li>
+        </ul>
+      </div>
+      <div class="to-note">
+        <b>In den Souffleurkasten</b>
+        <ul>
+          <li>Alle normalen Absätze</li>
+          <li>Also: dein gesprochener Text</li>
+          <li>Das Publikum sieht ihn nie</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="kicker">Die Hierarchie einer Folie</h3>
+    <p><code>####</code> setzt die Dachzeile mit Signalstrich, <code>#</code> die Schlagzeile,
+       <code>##</code> den Vorspann darunter. Eine Folie, die nur aus Überschriften besteht,
+       wird automatisch zur Titelseite: Schlagzeile groß, unten stehend.</p>
+
+    <h3 class="kicker">Wenn die Regel nicht passt</h3>
+    <p>Ein Absatz, der mit <code>!</code> beginnt, wandert trotzdem auf die Folie.
+       Ein strukturierter Block, der mit <code>//</code> beginnt, bleibt trotzdem Notiz.</p>
+
+    <h3 class="kicker">Folien trennen</h3>
+    <p>Drei Bindestriche <code>---</code> in einer eigenen Zeile beginnen eine neue Folie.
+       Mit der Option <em>Folie je Überschrift</em> tut das zusätzlich jede <code>#</code>- und
+       <code>##</code>-Überschrift.</p>
+
+    <h3 class="kicker">Bilder</h3>
+    <p>Zieh eine Bilddatei in den Editor. Sie wird eingebettet und wandert in jeden Export mit.
+       Ein einzelnes Bild füllt die Folie randlos, mehrere ordnen sich zu einem Raster.</p>
+
+    <h3 class="kicker">Schriften auf diesem Rechner</h3>
+    <dl class="fontlist" id="fontlist"></dl>
+
+    <h3 class="kicker">Kopfdaten</h3>
+    <p>Ein Block ganz oben zwischen zwei Zeilen aus drei Bindestrichen beschreibt das Dokument.
+       Damit gehört das Aussehen zum Deck und nicht zur Anwendung – dieselbe Datei öffnet
+       morgen wieder im richtigen Thema.</p>
+    <div class="rulecard">
+      <div class="to-stage">
+        <b>Mögliche Angaben</b>
+        <ul>
+          <li><code>thema</code> – heft, kontra, plakat, professional</li>
+          <li><code>format</code> – 16:9 oder 4:3</li>
+          <li><code>titel</code>, <code>datum</code> – Fußzeile</li>
+          <li><code>dauer</code> – Minuten, fürs Zeitgefühl</li>
+          <li><code>fußzeile: nein</code> – nur Ziffer, kein Titel</li>
+          <li><code>folie-je-ueberschrift: nein</code> – nur an Trennern schneiden</li>
+        </ul>
+      </div>
+      <div class="to-note">
+        <b>So sieht es aus</b>
+        <ul style="list-style:none;padding-left:0;font-family:var(--font-mono);font-size:12px">
+          <li>---</li>
+          <li>titel: Vortrag</li>
+          <li>datum: 12.03.2026</li>
+          <li>thema: professional</li>
+          <li>dauer: 30</li>
+          <li>---</li>
+        </ul>
+      </div>
+    </div>
+    <p>Stellst du oben ein Bedienelement um, schreibt Souffleur den Wert in die Kopfdaten
+       zurück – es gibt nur eine Wahrheit, und die steht in der Datei. Hat ein Dokument
+       keine Kopfdaten, bleiben die Regler wie bisher reine Anwendungseinstellungen.</p>
+    <p>Englisch geht auch, bei den Schlüsseln und bei den Werten: <code>theme</code>,
+       <code>aspect</code>, <code>title</code>, <code>date</code>, <code>duration</code>,
+       <code>footer</code>, <code>quotes</code>, <code>split-heading</code> und als Themen
+       <code>magazine</code>, <code>contrast</code>, <code>poster</code>. Beide
+       Schreibweisen dürfen im selben Dokument stehen.</p>
+
+    <h3 class="kicker">Anführungszeichen</h3>
+    <p>Souffleur setzt gerade Schreibmaschinenzeichen automatisch in typografische um,
+       samt Apostroph und Halbgeviertstrich als Gedankenstrich. Welches Paar, ist Hausstil
+       und steht in den Kopfdaten:</p>
+    <dl class="fontlist">
+      <dt>deutsch</dt><dd>„Wort“ und ‚Wort‘ – Duden-Standard</dd>
+      <dt>guillemets</dt><dd>»Wort« und ›Wort‹ – Buchtypografie, Spitzen nach innen</dd>
+      <dt>schweiz</dt><dd>«Wort» und ‹Wort› – Spitzen nach außen</dd>
+      <dt>englisch</dt><dd>“Word” und ‘Word’, Gedankenstrich als Geviertstrich</dd>
+      <dt>aus</dt><dd>keine Umsetzung, alles bleibt wie getippt</dd>
+      <dt>englische Namen</dt><dd>german, swiss, english, off oder none</dd>
+    </dl>
+    <p>Für die Projektion empfehle ich Guillemets: Das öffnende <code>„</code> sitzt auf der
+       Grundlinie und ist auf Distanz vom Komma kaum zu unterscheiden, Guillemets sitzen auf
+       Mittelhöhe und halten ihre Silhouette, wenn der Beamer Kontrast verliert.</p>
+
+    <h3 class="kicker">Dateien</h3>
+    <p><em>Öffnen</em> (<kbd>⌘O</kbd>) merkt sich die Datei, nicht nur ihren Inhalt.
+       <kbd>⌘S</kbd> schreibt danach direkt dorthin zurück – kein zweites Exemplar im
+       Download-Ordner, und dein Entwurf bleibt versionierbar. <kbd>⇧⌘S</kbd> sichert
+       unter neuem Namen, <kbd>⌘⏎</kbd> startet den Vortrag.</p>
+    <p>Der Punkt neben dem Dateinamen zeigt den Stand: hohl heißt gesichert, rot heißt
+       ungesicherte Änderungen. Unabhängig davon liegt der Text immer im lokalen Puffer
+       des Browsers – wenn dir der Rechner abstürzt, ist nichts weg.</p>
+    <p>Kann dein Browser nicht in Dateien zurückschreiben, verschwindet <em>Sichern unter</em>
+       und <em>Sichern</em> legt wie bisher eine Kopie ab. Souffleur sagt dir das, statt es zu verschweigen.</p>
+
+    <h3 class="kicker">Wenn eine Folie zu voll wird</h3>
+    <p>Souffleur verkleinert den Text so weit, bis er passt – aber Rettung ist kein Entwurf.
+       Musste er unter 88 % gehen, meldet die Miniatur den Wert in Messing und über der Bühne
+       steht <em>gedrängt</em>. Unter 72 % wird beides rot und heißt <em>zu voll</em>.</p>
+    <p>Die Zahl in der Fußzeile sagt, wie viele Folien betroffen sind; ein Klick darauf
+       springt zur schlimmsten. Das ist keine Fehlermeldung, sondern ein Hinweis: An der
+       Stelle ist Kürzen fast immer die bessere Antwort als Verkleinern.</p>
+
+    <h3 class="kicker">Ausgeben</h3>
+    <p><em>PDF</em> druckt das reine Deck, eine Folie je Seite, randlos.
+       <em>Handout</em> (<kbd>⇧⌘P</kbd>) druckt fürs Protokoll: A4 hoch, Folie oben,
+       dein Sprechtext darunter, mit Titel und Foliennummer im Kopf. Lange Notizen
+       laufen auf eine Folgeseite weiter, statt abgeschnitten zu werden.</p>
+    <p><em>HTML</em> legt eine einzelne Datei ab, die überall ohne Souffleur läuft —
+       inklusive Bildern und Notizen auf <kbd>N</kbd>.</p>
+
+    <h3 class="kicker">Puffer und Bilder</h3>
+    <p>Eingebettete Bilder liegen im Browser, nach Dokument getrennt – nicht in der
+       <em>.md</em>. Beim Sichern verwirft Souffleur die Bilder, die im Text nicht mehr
+       vorkommen, und sagt dir wie viele. Bilder anderer Dokumente bleiben unangetastet.</p>
+    <p><em>Neu</em> setzt alles zusammen zurück: Text, Datei-Verknüpfung, Puffer und die
+       Bilder dieses Dokuments. Gibt es ungesicherte Änderungen, wird vorher gefragt.
+       Ein Tastenkürzel gibt es dafür bewusst nicht – <kbd>⌘N</kbd> fängt Chrome selbst ab
+       und öffnet ein neues Fenster.</p>
+
+    <h3 class="kicker">Zweiter Bildschirm</h3>
+    <p><em>Zweiter Bildschirm</em> öffnet ein zweites Browserfenster, das nur die Folie zeigt.
+       Das ziehst du auf den Beamer und drückst dort <kbd>F</kbd> für Vollbild. Erlaubt der
+       Browser den Zugriff auf die Bildschirmanordnung, landet es von selbst am richtigen Ort.</p>
+    <p>Sobald dieses Fenster offen ist, wird das Hauptfenster beim Präsentieren zur
+       Referentenansicht: aktuelle Folie, nächste Folie, Notizen und Uhr – alles nur für dich.
+       Geblättert wird aus beiden Fenstern. Wichtig: die Bildschirme in den Systemeinstellungen
+       auf <em>erweitern</em> stellen, nicht auf synchronisieren.</p>
+
+    <h3 class="kicker">Tasten in der Präsentation</h3>
+    <dl class="keys">
+      <dt><kbd>→</kbd><kbd>Leer</kbd></dt><dd>Nächste Folie</dd>
+      <dt><kbd>←</kbd></dt><dd>Vorige Folie</dd>
+      <dt><kbd>N</kbd></dt><dd>Souffleurkasten ein- und ausblenden</dd>
+      <dt><kbd>G</kbd></dt><dd>Folienübersicht – Pfeiltasten wählen, Eingabe springt</dd>
+      <dt><kbd>T</kbd></dt><dd>Uhr starten und anhalten</dd>
+      <dt><kbd>R</kbd></dt><dd>Uhr zurücksetzen</dd>
+      <dt><kbd>B</kbd></dt><dd>Schwarzblende</dd>
+      <dt><kbd>F</kbd></dt><dd>Vollbild</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Zurück zum Schreiben</dd>
+    </dl>
+
+    <h3 class="kicker">Dein Text gehört dir</h3>
+    <p>Alles bleibt lokal in diesem Browser. <em>.md</em> gibt dir reines Markdown zurück,
+       <em>HTML</em> eine einzelne Datei, die überall ohne Souffleur läuft.</p>
+  </div>
+</dialog>
+
+<!-- Optional und absichtlich nicht im Repo: bindet eigene Schriften ein.
+     Fehlt die Datei, meldet die Konsole einen 404 und alles laeuft weiter. -->
+<script src="fonts.local.js"></script>
+
+<script type="text/plain" id="sample">
+---
+titel: Souffleur
+datum: Anleitung
+thema: heft
+zitatzeichen: guillemets
+format: 16:9
+dauer: 8
+---
+
+#### Werkzeug
+
+# Schreiben statt schieben
+## Warum Präsentationssoftware in der falschen Reihenfolge arbeitet
+
+Kurzer Blick in die Runde, dann anfangen. Der Satz, mit dem ich einsteige: Jedes Präsentationsprogramm, das ich kenne, lässt mich Kästchen schieben, bevor ich weiß, was ich eigentlich sagen will. Das ist die falsche Reihenfolge.
+
+Das hier ist gleichzeitig Beispiel und Anleitung. Einmal durchlesen, dann alles löschen und den eigenen Vortrag hineinschreiben.
+
+---
+
+## Es gibt genau eine Regel
+
+- Was **Struktur** hat, geht auf die Bühne
+- Was **Fließtext** ist, bleibt beim Souffleur
+
+Und das ist wirklich alles. Links im Editor sieht man es live: Zeilen mit rotem Balken landen auf der Leinwand, alles andere ist der Text, den nur ich lese. Ich springe also nie zwischen zwei Eingabefeldern hin und her – ich schreibe meinen Vortrag als Text, und die Folien fallen dabei ab.
+
+Hier kurz auf den Editor zeigen.
+
+---
+
+#### Was Struktur heißt
+
+### Sechs Dinge, die man auf eine Leinwand schreibt
+
+- Überschriften
+- Listen wie diese hier
+- Zitate, Code, Bilder, Tabellen
+
+Das sind die Dinge, die kurz sind und hängenbleiben sollen. Ganze Sätze gehören auf eine Folie praktisch nie – die sagt man.
+
+---
+
+> Eine Folie ist kein Handout. Wer alles aufschreibt, wird nicht mehr gebraucht.
+> -- Jede Präsentationsberatung seit 1995
+
+Das Zitat zwei, drei Sekunden stehen lassen, bevor ich weiterrede. Zitate bekommen automatisch die ganze Fläche und einen Signalstrich darüber. Getan habe ich dafür nichts außer ein Größerzeichen zu tippen.
+
+---
+
+## Das Layout entscheidet sich selbst
+
+| Was du schreibst | Was daraus wird |
+| --- | --- |
+| Nur Überschriften | Titelseite, Schlagzeile unten |
+| Ein Bild | Randlos über die ganze Folie |
+| Mehrere Bilder | Automatisches Raster |
+| Ein Zitat | Große Zeile mit Signalstrich |
+| Alles andere | Ruhig linksbündig |
+
+Und wenn es zu lang ist? Dann verkleinert Souffleur den Text so weit, bis er passt. Es gibt keinen Überlauf und keine abgeschnittene letzte Zeile – das ist der halbe Grund, warum ich das gebaut habe.
+
+---
+
+#### Notfallventil
+
+! Manchmal will man doch einen ganzen Satz zeigen.
+
+Eine Definition, eine Zahl, eine Pointe. Ein Rufzeichen am Zeilenanfang hebt die Regel für diesen einen Absatz auf. Umgekehrt schiebt ein doppelter Schrägstrich einen strukturierten Block zurück in die Notizen:
+
+// - Diese Liste sieht niemand außer mir
+// - Praktisch für Stichworte zum freien Reden
+
+---
+
+#### Kopfdaten
+
+### Das Dokument beschreibt sich selbst
+
+- `thema` und `format` – das Aussehen gehört zum Deck
+- `titel` und `datum` – stehen in der Fußzeile jeder Folie
+- `dauer` – die Konsole rechnet Vorsprung und Rückstand
+
+Ganz oben steht ein Block zwischen zwei Zeilen aus drei Bindestrichen. Was dort steht, gehört zum Dokument und nicht zur Anwendung: Wenn ich diesen Entwurf morgen öffne, ist das Thema wieder da, ohne dass ich etwas einstellen muss.
+
+Und es geht in beide Richtungen – stelle ich oben ein Bedienelement um, schreibt Souffleur den Wert in die Kopfdaten zurück. Es gibt also nur eine Wahrheit, und die steht in der Datei.
+
+---
+
+## Wenn du fertig bist
+
+- **Präsentieren** – Vollbild, Uhr, Notizen auf Tastendruck
+- **PDF** – eine Seite pro Folie
+- **HTML** – eine einzige Datei, läuft überall
+
+Zum Schluss der Hinweis, dass das Markdown-Dokument die Wahrheit bleibt: versionierbar, diffbar, in jedem Editor zu öffnen. Souffleur ist nur eine Brille darauf.
+
+Danke – und jetzt Fragen.
+</script>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+
+  const ed = $("ed"), hl = $("hl"), stage = $("stage"), stageScale = $("stage-scale"),
+        notesEl = $("notes"), rail = $("rail"), present = $("present"),
+        pStage = $("present-stage"), pNotes = $("pnotes"), pTimer = $("ptimer"),
+        pCount = $("pcount"), pProgress = $("pprogress"), helpDlg = $("help"),
+        toastEl = $("toast");
+
+  const KEY = { doc: "souffleur.doc", opts: "souffleur.opts",
+                assets: "souffleur.assets", name: "souffleur.name" };
+
+  const state = {
+    slides: [],
+    current: 0,
+    assets: {},
+    file: null,        // FileSystemFileHandle, falls die Datei beschreibbar ist
+    fileName: null,
+    dirty: false,      // ungesicherte Änderungen gegenüber der Datei
+    meta: {},          // Kopfdaten des Dokuments
+    metaEnd: 0,        // erste Zeile nach dem Kopfdaten-Block
+    fitPct: [],        // je Folie: wie viel Schriftgröße der Auto-Fit übrig ließ
+    opts: { deck: "heft", aspect: "16:9", splitHeading: true }
+  };
+
+  const VIRT = { "16:9": [1280, 720], "4:3": [1280, 960] };
+  const virt = () => VIRT[state.opts.aspect] || VIRT["16:9"];
+
+  /* ==========================================================
+     Schriften
+     Pro Rolle mehrere Kandidaten, weil Familiennamen je nach
+     Herkunft und Installation abweichen. Was wirklich anliegt,
+     wird gemessen statt angenommen.
+     ========================================================== */
+
+  /* Die Zuweisung steht im Stylesheet. Hier wird nur nachgesehen,
+     was auf diesem Rechner tatsächlich ankommt – für die Anzeige. */
+  const FONT_ROLES = window.SOUFFLEUR_FONTS || [
+    { label: "Schlagzeile",  want: ["Souffleur Display", "Fraunces", "Playfair Display", "Iowan Old Style"] },
+    { label: "Lesetext",     want: ["Souffleur Text", "Newsreader", "Source Serif 4", "Georgia"] },
+    { label: "Auszeichnung", want: ["Souffleur UI", "IBM Plex Sans", "Public Sans", "Avenir Next"] },
+    { label: "Editor",       want: ["Souffleur Mono", "Iosevka", "IBM Plex Mono", "SF Mono"] },
+    { label: "Plakat",       want: ["Souffleur Poster", "League Gothic", "Oswald", "Archivo Narrow"] },
+    { label: "Geometrisch",  want: ["Souffleur Geo", "Schibsted Grotesk", "Archivo", "IBM Plex Sans"] }
+  ];
+
+  // Breitenvergleich gegen die generischen Familien: liefert die
+  // Ersatzschrift dieselbe Breite, ist die gesuchte nicht da.
+  function hasFont(family) {
+    const probe = "MmWwLl0Oo—@#%&123456789 Hamburgefonstiv";
+    const ctx = document.createElement("canvas").getContext("2d");
+    return ["monospace", "serif", "sans-serif"].some(generic => {
+      ctx.font = `48px ${generic}`;
+      const base = ctx.measureText(probe).width;
+      ctx.font = `48px "${family}", ${generic}`;
+      return Math.abs(ctx.measureText(probe).width - base) > 0.4;
+    });
+  }
+
+  function reportFonts() {
+    const rows = FONT_ROLES.map(r => ({ label: r.label, found: r.want.find(hasFont) || null }));
+    const hits = rows.filter(r => r.found).map(r => r.found);
+    $("fontinfo").textContent = hits.length ? hits.slice(0, 3).join(" · ") : "Systemschriften";
+    $("fontlist").innerHTML = rows.map(r =>
+      `<dt>${r.label}</dt><dd>${r.found ? esc(r.found) : `<span class="miss">nicht installiert</span>`}</dd>`
+    ).join("");
+  }
+
+  /* ==========================================================
+     Markdown → Blöcke
+     Jeder Block kennt seine Quellzeilen und weiß, ob er auf die
+     Bühne gehört. Das treibt Renderer und Editormarkierung.
+     ========================================================== */
+
+  /* ==========================================================
+     Kopfdaten
+     Ein ---Block ganz oben beschreibt das Dokument selbst.
+     Kollidiert nicht mit dem Folientrenner: ein Dokument, das
+     mit einem Trenner beginnt, hätte nur eine leere erste Folie.
+     ========================================================== */
+
+  const META_KEYS = {
+    thema: "thema", theme: "thema",
+    format: "format", aspect: "format",
+    titel: "titel", title: "titel",
+    datum: "datum", date: "datum",
+    dauer: "dauer", duration: "dauer",
+    fusszeile: "fusszeile", footer: "fusszeile",
+    zitatzeichen: "zitatzeichen", anfuehrungszeichen: "zitatzeichen",
+    quotes: "zitatzeichen",
+    "folie-je-ueberschrift": "folie-je-ueberschrift",
+    "split-heading": "folie-je-ueberschrift"
+  };
+
+  const normKey = (s) => s.trim().toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/\s+/g, "-");
+
+  const truthy = (v) => /^(ja|yes|true|on|1|an)$/i.test(String(v).trim());
+  const falsy  = (v) => /^(nein|no|none|false|off|0|aus)$/i.test(String(v).trim());
+
+  function parseMeta(src) {
+    const lines = src.split("\n");
+    if (!/^---\s*$/.test(lines[0] || "")) return { meta: {}, end: 0 };
+    const meta = {};
+    let i = 1;
+    while (i < lines.length && !/^---\s*$/.test(lines[i])) {
+      const m = lines[i].match(/^\s*([^:]{1,40}?)\s*:\s*(.*)$/);
+      if (m) {
+        const key = normKey(m[1]);
+        meta[META_KEYS[key] || key] = m[2].trim().replace(/^["']|["']$/g, "");
+      }
+      i++;
+    }
+    // Nicht geschlossen? Dann war es kein Vorspann, sondern ein Trenner.
+    if (i >= lines.length) return { meta: {}, end: 0 };
+    return { meta, end: i + 1 };
+  }
+
+  const DECKS = ["heft", "kontra", "plakat", "professional"];
+  /* Die Schluessel haben englische Aliasse, die Werte brauchen sie auch:
+     sonst schreibt man "theme: heft", also halb uebersetzt. Normalisiert
+     wird auf einen kanonischen Namen, damit Dokumente in beide Richtungen
+     portabel bleiben. */
+  const DECK_ALIASES = { magazine: "heft", contrast: "kontra", poster: "plakat" };
+  const normalizeDeck = (deck) => {
+    const key = String(deck || "").trim().toLowerCase();
+    const name = DECK_ALIASES[key] || key;
+    return DECKS.includes(name) ? name : null;
+  };
+
+  function applyMeta(meta) {
+    const deck = normalizeDeck(meta.thema);
+    if (deck) state.opts.deck = deck;
+    state.opts.deck = normalizeDeck(state.opts.deck) || "heft";
+    if (meta.format && VIRT[meta.format]) state.opts.aspect = meta.format;
+    if (meta["folie-je-ueberschrift"] !== undefined) {
+      const v = meta["folie-je-ueberschrift"];
+      if (truthy(v) || falsy(v)) state.opts.splitHeading = truthy(v);
+    }
+    $("deck-theme").value = state.opts.deck;
+    $("aspect").value = state.opts.aspect;
+    $("split-heading").checked = state.opts.splitHeading;
+  }
+
+  /* Die Bedienelemente ändern das Dokument, nicht nur die App —
+     sonst würde der nächste Durchlauf die Kopfdaten wieder
+     durchsetzen und der Regler wirkte wirkungslos. */
+  function setMeta(key, value) {
+    const fm = parseMeta(ed.value);
+    if (!fm.end) return false;          // kein Vorspann: App-Einstellung genügt
+    const lines = ed.value.split("\n");
+    let hit = -1;
+    for (let i = 1; i < fm.end - 1; i++) {
+      const m = lines[i].match(/^\s*([^:]{1,40}?)\s*:/);
+      if (m && (META_KEYS[normKey(m[1])] || normKey(m[1])) === key) { hit = i; break; }
+    }
+    if (hit >= 0) lines[hit] = `${key}: ${value}`;
+    else lines.splice(fm.end - 1, 0, `${key}: ${value}`);
+    const caret = Math.min(ed.selectionStart, ed.value.length);
+    ed.value = lines.join("\n");
+    const pos = Math.min(caret, ed.value.length);
+    ed.setSelectionRange(pos, pos);
+    markDirty();
+    return true;
+  }
+
+  const STAGE_KINDS = new Set(["h", "ul", "ol", "quote", "code", "img", "table"]);
+  const isStructural = (l) =>
+    /^\s*(#{1,6}\s|>|\||```|~~~|\/\/)/.test(l) ||
+    /^\s*([-*+]|\d+[.)])\s+/.test(l) ||
+    /^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l) ||
+    /^\s*!\[[^\]]*\]\([^)\s]+\)\s*$/.test(l);
+
+  // startLine überspringt die Kopfdaten. Die Zeilennummern bleiben
+  // absolut, damit die Markierung im Editor weiter deckungsgleich sitzt.
+  function parse(src, opts, startLine = 0) {
+    const lines = src.split("\n");
+    const blocks = [];
+    let i = startLine;
+
+    const push = (b, from, to) => {
+      b.from = from; b.to = to;
+      b.target = b.forced || (STAGE_KINDS.has(b.kind) ? "stage" : "notes");
+      blocks.push(b);
+    };
+
+    while (i < lines.length) {
+      const line = lines[i].trimEnd();
+      const start = i;
+
+      if (!line.trim()) { i++; continue; }
+
+      if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { push({ kind: "break" }, start, i); i++; continue; }
+
+      // Erzwungene Notiz
+      if (/^\s*\/\//.test(line)) {
+        const buf = [];
+        while (i < lines.length && /^\s*\/\//.test(lines[i])) { buf.push(lines[i].replace(/^\s*\/\/ ?/, "")); i++; }
+        push({ kind: "note-raw", forced: "notes", lines: buf }, start, i - 1);
+        continue;
+      }
+
+      // Codeblock
+      const fence = line.match(/^\s*(`{3,}|~{3,})\s*(\S*)/);
+      if (fence) {
+        const marker = fence[1][0], buf = [];
+        i++;
+        const close = new RegExp("^\\s*" + (marker === "`" ? "`" : "~") + "{3,}\\s*$");
+        while (i < lines.length && !close.test(lines[i])) { buf.push(lines[i]); i++; }
+        if (i < lines.length) i++;
+        push({ kind: "code", lang: fence[2] || "", text: buf.join("\n") }, start, i - 1);
+        continue;
+      }
+
+      const h = line.match(/^(#{1,6})\s+(.*)$/);
+      if (h) { push({ kind: "h", level: h[1].length, text: h[2].trim() }, start, i); i++; continue; }
+
+      // Zitat
+      if (/^\s*>\s?/.test(line)) {
+        const buf = [];
+        while (i < lines.length && /^\s*>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^\s*>\s?/, "")); i++; }
+        let cite = "";
+        const last = (buf[buf.length - 1] || "").trim();
+        const m = last.match(/^(?:--|—|–)\s*(.+)$/);
+        if (m && buf.length > 1) { cite = m[1].trim(); buf.pop(); }
+        push({ kind: "quote", text: buf.join(" ").trim(), cite }, start, i - 1);
+        continue;
+      }
+
+      // Listen
+      if (/^\s*([-*+])\s+/.test(line) || /^\s*\d+[.)]\s+/.test(line)) {
+        const ordered = /^\s*\d+[.)]\s+/.test(line);
+        const items = [];
+        while (i < lines.length && (/^\s*([-*+])\s+/.test(lines[i]) || /^\s*\d+[.)]\s+/.test(lines[i]))) {
+          const indent = (lines[i].match(/^\s*/) || [""])[0].length;
+          items.push({ depth: Math.min(1, Math.floor(indent / 2)),
+                       text: lines[i].replace(/^\s*(?:[-*+]|\d+[.)])\s+/, "") });
+          i++;
+        }
+        push({ kind: ordered ? "ol" : "ul", items }, start, i - 1);
+        continue;
+      }
+
+      // Tabelle
+      if (/^\s*\|.*\|\s*$/.test(line)) {
+        const rows = [];
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { rows.push(lines[i]); i++; }
+        const cells = rows.map(r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()));
+        let head = null, body = cells;
+        if (cells.length > 1 && cells[1].every(c => /^:?-{2,}:?$/.test(c))) { head = cells[0]; body = cells.slice(2); }
+        push({ kind: "table", head, body }, start, i - 1);
+        continue;
+      }
+
+      // Alleinstehendes Bild
+      const img = line.match(/^\s*!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*$/);
+      if (img) { push({ kind: "img", alt: img[1], src: img[2] }, start, i); i++; continue; }
+
+      // Absatz – Standard: Notiz. Führendes ! zwingt auf die Bühne.
+      const buf = [];
+      let forced = null;
+      while (i < lines.length && lines[i].trim() && !isStructural(lines[i])) {
+        let t = lines[i];
+        if (!buf.length && /^\s*!(?!\[)/.test(t)) { forced = "stage"; t = t.replace(/^\s*!\s?/, ""); }
+        buf.push(t.trim());
+        i++;
+      }
+      if (buf.length) push({ kind: "p", forced, text: buf.join(" ") }, start, i - 1);
+      else i++;
+    }
+
+    // Blöcke zu Folien gruppieren
+    const slides = [];
+    let cur = null;
+    const fresh = (from) => ({ blocks: [], from, to: from });
+
+    for (const b of blocks) {
+      if (b.kind === "break") {
+        if (cur && cur.blocks.length) { cur.to = b.from; slides.push(cur); }
+        cur = fresh(b.to + 1);
+        continue;
+      }
+      const isTop = b.kind === "h" && b.level <= 2 && b.target === "stage";
+      const onStage = cur ? cur.blocks.filter(x => x.target === "stage") : [];
+      const hasStage = onStage.length > 0;
+
+      // Steht bisher nur eine Schlagzeile auf der Folie und kommt jetzt eine
+      // flachere Überschrift, ist das der Vorspann – und keine neue Folie.
+      const lastMain = [...onStage].reverse().find(x => x.kind === "h" && x.level <= 3);
+      const isSubtitle = hasStage && onStage.every(x => x.kind === "h")
+                         && lastMain && b.level > lastMain.level;
+
+      // Eine Dachzeile direkt davor gehört zur neuen Folie, nicht zur alten.
+      if (opts.splitHeading && isTop && hasStage && !isSubtitle) {
+        const trailing = [];
+        while (cur.blocks.length) {
+          const last = cur.blocks[cur.blocks.length - 1];
+          if (last.kind === "h" && last.level >= 4) trailing.unshift(cur.blocks.pop());
+          else break;
+        }
+        if (cur.blocks.some(x => x.target === "stage")) {
+          cur.to = b.from - 1;
+          slides.push(cur);
+          cur = fresh(trailing.length ? trailing[0].from : b.from);
+          cur.blocks.push(...trailing);
+        } else {
+          cur.blocks.push(...trailing);
+        }
+      }
+      if (!cur) cur = fresh(b.from);
+      cur.blocks.push(b);
+      cur.to = b.to;
+    }
+    if (cur && cur.blocks.length) slides.push(cur);
+
+    return slides.filter(s => s.blocks.length);
+  }
+
+  /* ==========================================================
+     Rendern
+     ========================================================== */
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  const SENT = " ";
+
+  /* Anfuehrungszeichen sind Hausstil, nicht Wahrheit. Drei korrekte
+     deutschsprachige Setzungen, dazu die englische:
+       deutsch     „Wort“   Duden-Standard
+       guillemets  »Wort«   Buchtypografie, Spitzen nach innen
+       schweiz     «Wort»   Spitzen nach aussen
+       englisch    “Word”
+     Die einfachen Zeichen folgen zwingend der Wahl des primaeren. */
+  const ZITAT = {
+    deutsch:    { auf: "\u201E", zu: "\u201C", eauf: "\u201A", ezu: "\u2018" },
+    guillemets: { auf: "\u00BB", zu: "\u00AB", eauf: "\u203A", ezu: "\u2039" },
+    schweiz:    { auf: "\u00AB", zu: "\u00BB", eauf: "\u2039", ezu: "\u203A" },
+    englisch:   { auf: "\u201C", zu: "\u201D", eauf: "\u2018", ezu: "\u2019" }
+  };
+
+  /* Deutsche Detailtypografie, Duden-Konvention:
+     „Wort“ primaer, ‚Wort‘ sekundaer, ’ als Apostroph, und der
+     Gedankenstrich ist der Halbgeviertstrich mit Wortabstaenden —
+     nicht der Geviertstrich, das ist englische Setzung. */
+  const ZITAT_ALIASES = { german: "deutsch", swiss: "schweiz", english: "englisch" };
+
+  function typo(t) {
+    const roh = String(state.meta.zitatzeichen || "deutsch").trim().toLowerCase();
+    if (falsy(roh)) return t;            // deckt aus, off, none-artige Werte ab
+    const stil = ZITAT_ALIASES[roh] || roh;
+    const z = ZITAT[stil] || ZITAT.deutsch;
+    const davor = "(^|[\\s(\\[\\u2013\\u2014])";
+    let out = t
+      .replace(/(\w)'(\w)/g, "$1\u2019$2")                       // Apostroph zuerst
+      .replace(new RegExp(davor + '"', "g"), "$1" + z.auf)
+      .replace(/"/g, z.zu)
+      .replace(new RegExp(davor + "'", "g"), "$1" + z.eauf)
+      .replace(/'/g, z.ezu);
+    // Gedankenstrich: deutsch der Halbgeviertstrich mit Wortabstaenden,
+    // englisch der Geviertstrich ohne.
+    return stil === "englisch"
+      ? out.replace(/\s--\s/g, "\u2014").replace(/(\s)-(?=\s)/g, "$1\u2014")
+      : out.replace(/(\s)--(?=\s)/g, "$1\u2013").replace(/(\s)-(?=\s)/g, "$1\u2013");
+  }
+
+  function inline(s) {
+    // Code zuerst herausnehmen, damit die Typografie ihn nicht anfasst
+    const codes = [];
+    let out = s.replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return SENT + (codes.length - 1) + SENT; });
+    out = esc(typo(out));
+    out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,
+      (_, t, href) => `<a href="${esc(href)}" target="_blank" rel="noopener">${t}</a>`);
+    out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+    out = out.replace(new RegExp(SENT + "(\\d+)" + SENT, "g"), (_, n) => `<code>${esc(codes[+n])}</code>`);
+    return out;
+  }
+
+  /* ==========================================================
+     Bilderspeicher
+     Nach Dokument getrennt. Global wäre „lösche, was niemand
+     referenziert" gefährlich: Beim Wechsel auf ein anderes Deck
+     würde es die Bilder des vorigen mitnehmen.
+     ========================================================== */
+
+  let assetStore = {};                       // { Dokument: { "@bild-1.png": dataURL } }
+  const docKey = () => state.fileName || "(ohne Datei)";
+
+  function useAssetsFor(name) {
+    const k = name || "(ohne Datei)";
+    if (!assetStore[k]) assetStore[k] = {};
+    state.assets = assetStore[k];
+  }
+
+  function referenced() {
+    const used = new Set();
+    const re = /!\[[^\]]*\]\(\s*(@[^)\s]+)/g;
+    let m;
+    while ((m = re.exec(ed.value))) used.add(m[1]);
+    return used;
+  }
+
+  // Nur innerhalb des aktuellen Dokuments aufräumen
+  function pruneAssets() {
+    const used = referenced();
+    const dead = Object.keys(state.assets).filter(k => !used.has(k));
+    dead.forEach(k => delete state.assets[k]);
+    for (const k of Object.keys(assetStore))
+      if (k !== docKey() && !Object.keys(assetStore[k]).length) delete assetStore[k];
+    return dead.length;
+  }
+
+  /* Dickte der haengenden Zeichen, einmal je Schriftrolle gemessen.
+     Feste Werte waeren falsch: jede Schrift setzt sie anders. */
+  const HAENGEND = "\u00AB\u00BB\u201E\u201C\u201A\u2018\u2039\u203A";
+  const dickteCache = new Map();
+  function ueberhang(zeichen) {
+    if (!zeichen || !HAENGEND.includes(zeichen)) return 0;
+    if (dickteCache.has(zeichen)) return dickteCache.get(zeichen);
+    const stapel = getComputedStyle(document.documentElement)
+                     .getPropertyValue("--font-display").trim() || "serif";
+    const c = document.createElement("canvas").getContext("2d");
+    c.font = '400 100px ' + stapel;
+    // Etwas weniger als die volle Dickte: das Zeichen soll haengen,
+    // nicht ausbrechen.
+    const wert = +(c.measureText(zeichen).width / 100 * 0.85).toFixed(3);
+    dickteCache.set(zeichen, wert);
+    return wert;
+  }
+
+  const resolveSrc = (src) => (src.startsWith("@") && state.assets[src]) ? state.assets[src] : src;
+
+  function imgTag(b) {
+    if (b.src.startsWith("@") && !state.assets[b.src])
+      return `<div class="img-missing">Bild ${esc(b.src)} fehlt<br>Datei erneut in den Editor ziehen</div>`;
+    return `<img src="${esc(resolveSrc(b.src))}" alt="${esc(b.alt)}" loading="lazy">`;
+  }
+
+  function layoutOf(sb) {
+    if (!sb.length) return "empty";
+    const imgs = sb.filter(b => b.kind === "img");
+    const rest = sb.filter(b => b.kind !== "img");
+    if (imgs.length === 1 && !rest.length) return "image";
+    if (imgs.length > 1 && !rest.length) return "gallery";
+    if (!imgs.length && rest.every(b => b.kind === "h")) return "title";
+    if (!imgs.length && rest.length === 1 && rest[0].kind === "quote") return "quote";
+    return "body";
+  }
+
+  function renderList(b) {
+    const tag = b.kind;
+    let html = `<${tag}>`, open = false;
+    for (const it of b.items) {
+      if (it.depth === 0) {
+        if (open) { html += `</${tag}></li>`; open = false; }
+        html += `<li>${inline(it.text)}`;
+        html += "</li>";
+      } else {
+        // verschachtelte Ebene an das letzte Element hängen
+        html = html.replace(/<\/li>$/, "");
+        if (!open) { html += `<${tag}>`; open = true; }
+        html += `<li>${inline(it.text)}</li>`;
+        if (b.items[b.items.length - 1] === it) { html += `</${tag}></li>`; open = false; }
+      }
+    }
+    if (open) html += `</${tag}></li>`;
+    return html + `</${tag}>`;
+  }
+
+  function renderBlock(b) {
+    switch (b.kind) {
+      case "h":     return `<h${b.level}>${inline(b.text)}</h${b.level}>`;
+      case "ul":
+      case "ol":    return renderList(b);
+      case "quote": {
+        // Optischer Randausgleich: ein oeffnendes Anfuehrungszeichen am
+        // Zeilenanfang laesst die Zeile eingerueckt erscheinen. Es haengt
+        // um seine gemessene Dickte in den Rand.
+        const satz = inline(b.text);
+        const erst = satz.replace(/^<[^>]+>/, "").charAt(0);
+        const ein = ueberhang(erst);
+        const st = ein ? ` style="text-indent:-${ein}em"` : "";
+        return `<blockquote${st}>${satz}${b.cite ? `<cite>${inline(b.cite)}</cite>` : ""}</blockquote>`;
+      }
+      case "code":  return `<pre><code>${esc(b.text)}</code></pre>`;
+      case "img":   return `<figure>${imgTag(b)}</figure>`;
+      case "table": {
+        let html = "<table>";
+        if (b.head) html += "<thead><tr>" + b.head.map(c => `<th>${inline(c)}</th>`).join("") + "</tr></thead>";
+        html += "<tbody>" + b.body.map(r => "<tr>" + r.map(c => `<td>${inline(c)}</td>`).join("") + "</tr>").join("") + "</tbody>";
+        return html + "</table>";
+      }
+      case "p":        return `<p>${inline(b.text)}</p>`;
+      case "note-raw": return b.lines.map(l => `<p>${inline(l.replace(/^\s*[-*+]\s+/, "• "))}</p>`).join("");
+      default:         return "";
+    }
+  }
+
+  function slideHTML(slide, index) {
+    const sb = slide.blocks.filter(b => b.target === "stage");
+    const layout = layoutOf(sb);
+    let inner;
+
+    if (layout === "empty") {
+      inner = `<div class="empty-hint">nur Notizen</div>`;
+    } else if (layout === "gallery") {
+      const cols = sb.length <= 4 ? 2 : 3;
+      inner = `<div class="gallery-grid" style="grid-template-columns:repeat(${cols},1fr)">`
+            + sb.map(imgTag).join("") + `</div>`;
+    } else {
+      inner = sb.map(renderBlock).join("");
+    }
+
+    // Titelseiten und randlose Bilder bekommen keinen Kolumnentitel
+    const bare = layout === "image" || layout === "gallery" || layout === "title" || layout === "empty";
+    const wantLabel = !falsy(state.meta.fusszeile || "ja");
+    const label = wantLabel
+      ? [state.meta.titel, state.meta.datum].filter(Boolean).join(" · ")
+      : "";
+    const foot = bare ? "" :
+      `<div class="slide-foot">${label ? `<span class="label">${esc(label)}</span>` : ""}` +
+      `<span class="num">${index + 1}</span></div>`;
+
+    const [w, h] = virt();
+    return `<div class="slide" data-deck="${state.opts.deck}" style="width:${w}px;height:${h}px;font-size:${Math.round(w / 27)}px;--s-unit:${(w / 27).toFixed(2)}px">
+              <div class="slide-content" data-layout="${layout}">${inner}</div>${foot}
+            </div>`;
+  }
+
+  function notesHTML(slide) {
+    const nb = slide.blocks.filter(b => b.target === "notes");
+    return nb.length ? nb.map(renderBlock).join("") : "";
+  }
+
+  /* ---- Auto-Fit: verkleinert, bis der Inhalt passt ---- */
+
+  // Liefert zurück, wie viel von der Ausgangsgröße übrig blieb (1 = nichts verkleinert)
+  function fit(slideEl) {
+    if (!slideEl) return 1;
+    const content = slideEl.querySelector(".slide-content");
+    if (!content) return 1;
+    const base = parseFloat(slideEl.style.fontSize) || 47;
+
+    /* Zum Messen alles nach unten laufen lassen. scrollHeight kennt nur
+       Überlauf am unteren Rand – bei justify-content: flex-end (Titelfolie)
+       meldet es null, obwohl oben Zeilen heraushängen, und bei center nur
+       die Hälfte. Ohne diesen Griff verkleinert der Auto-Fit zu wenig
+       oder gar nicht. */
+    const keep = content.style.justifyContent;
+    content.style.justifyContent = "flex-start";
+
+    /* Wo die Kinder wirklich liegen, statt scrollHeight zu glauben:
+       offsetTop ist Layout-Wahrheit, unabhängig von Ausrichtung,
+       Innenabstand und der Skalierung des Elternelements. */
+    const overshoot = () => {
+      const kids = content.children;
+      if (!kids.length) return 0;
+      const cs = getComputedStyle(content);
+      const padT = parseFloat(cs.paddingTop) || 0;
+      const padB = parseFloat(cs.paddingBottom) || 0;
+      let top = Infinity, bottom = -Infinity;
+      for (const k of kids) {
+        top = Math.min(top, k.offsetTop);
+        bottom = Math.max(bottom, k.offsetTop + k.offsetHeight);
+      }
+      return Math.max(0, padT - top)
+           + Math.max(0, bottom - (content.clientHeight - padB));
+    };
+
+    const fits = () => overshoot() <= 0.5 &&
+                       content.scrollWidth <= content.clientWidth + 1;
+
+    slideEl.style.fontSize = base + "px";
+    if (!fits()) {
+      let lo = base * 0.30, hi = base;
+      for (let n = 0; n < 12; n++) {
+        const mid = (lo + hi) / 2;
+        slideEl.style.fontSize = mid + "px";
+        if (fits()) lo = mid; else hi = mid;
+      }
+      slideEl.style.fontSize = lo + "px";
+    }
+
+    content.style.justifyContent = keep;
+
+    /* Durchschuss-Ausgleich: kleinere Schrift braucht relativ mehr
+       Durchschuss. Der Auto-Fit skaliert alles proportional, das
+       Verhaeltnis bleibt also gleich – optisch ist eine geschrumpfte
+       Folie dadurch leicht unterschossen. Rund ein Fuenftel des
+       Verlusts wieder aufschlagen. */
+    const anteil = parseFloat(slideEl.style.fontSize) / base;
+    slideEl.style.setProperty("--s-lead", (1 + (1 - anteil) * 0.2).toFixed(4));
+    slideEl.style.setProperty("--s-fit", anteil.toFixed(4));
+    return anteil;
+  }
+
+  /* Ab wann eine Folie als gedrängt gilt. Der Auto-Fit rettet zwar jede
+     Folie, aber Rettung ist kein Entwurf – unterhalb dieser Werte ist
+     Kürzen die bessere Antwort als Verkleinern. */
+  const TIGHT = 0.88, OVER = 0.72;
+  const tightClass = (p) => p <= OVER ? "is-over" : p <= TIGHT ? "is-tight" : "";
+
+  /* ---- Zeichnen ---- */
+
+  function drawStage() {
+    const slide = state.slides[state.current];
+    if (!slide) { stageScale.innerHTML = ""; notesEl.innerHTML = ""; $("pos-label").textContent = ""; return; }
+
+    stageScale.innerHTML = slideHTML(slide, state.current);
+
+    const [vw, vh] = virt();
+    stage.style.width = "";
+    stage.style.height = "";
+    const avail = stage.clientWidth;
+    const maxH = Math.max(220, window.innerHeight * 0.54);
+    let k = avail / vw;
+    if (vh * k > maxH) k = maxH / vh;
+    stageScale.style.transform = `scale(${k})`;
+    stageScale.style.width = vw + "px";
+    stageScale.style.height = vh + "px";
+    stage.style.width = Math.round(vw * k) + "px";
+    stage.style.height = Math.round(vh * k) + "px";
+
+    fit(stageScale.querySelector(".slide"));
+
+    const nh = notesHTML(slide);
+    notesEl.className = "prompt-text" + (nh ? "" : " empty");
+    notesEl.innerHTML = nh || "Für diese Folie ist nichts notiert. Schreib einen normalen Absatz – er landet automatisch hier.";
+
+    $("pos-label").textContent = `${state.current + 1} von ${state.slides.length}`;
+
+    const p = state.fitPct[state.current];
+    const flag = $("tight-flag");
+    const cls = p === undefined ? "" : tightClass(p);
+    flag.className = "tight-flag" + (cls ? " show" : "") + (cls === "is-over" ? " is-over" : "");
+    flag.textContent = cls === "is-over"
+      ? `zu voll – auf ${Math.round(p * 100)}% verkleinert`
+      : cls ? `gedrängt – ${Math.round(p * 100)}%` : "";
+    rail.querySelectorAll(".thumb").forEach((t, i) => t.setAttribute("aria-current", String(i === state.current)));
+    const active = rail.children[state.current];
+    if (active) active.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  function drawRail() {
+    const [vw, vh] = virt();
+    const k = 138 / vw;
+    rail.innerHTML = "";
+    state.fitPct = [];        // gilt immer nur für den aktuellen Satz Folien
+    state.slides.forEach((s, i) => {
+      const btn = document.createElement("button");
+      btn.className = "thumb";
+      btn.setAttribute("aria-current", String(i === state.current));
+      btn.setAttribute("aria-label", `Folie ${i + 1}`);
+      btn.innerHTML =
+        `<div class="thumb-frame" style="width:${Math.round(vw * k)}px;height:${Math.round(vh * k)}px">
+           <div style="transform:scale(${k});transform-origin:top left;width:${vw}px;height:${vh}px">${slideHTML(s, i)}</div>
+         </div><div class="thumb-num">${String(i + 1).padStart(2, "0")}</div>`;
+      btn.addEventListener("click", () => goto(i, true));
+      rail.appendChild(btn);
+
+      // Der Auto-Fit läuft hier ohnehin für jede Folie – also gleich merken,
+      // wie stark er verkleinern musste.
+      const p = fit(btn.querySelector(".slide"));
+      state.fitPct[i] = p;
+      const cls = tightClass(p);
+      if (cls) {
+        btn.classList.add(cls);
+        btn.querySelector(".thumb-num").insertAdjacentHTML(
+          "beforeend", `<span class="pct">${Math.round(p * 100)}%</span>`);
+      }
+    });
+  }
+
+  function drawHighlight() {
+    const lines = ed.value.split("\n");
+    const stageLines = new Set();
+    for (const s of state.slides)
+      for (const b of s.blocks)
+        if (b.target === "stage")
+          for (let l = b.from; l <= b.to; l++) stageLines.add(l);
+
+    hl.innerHTML = lines.map((l, i) => {
+      const isMeta = i < state.metaEnd;
+      const isBreak = !isMeta && /^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l);
+      const cls = "hl-line" + (isMeta ? " is-meta" : "")
+                + (stageLines.has(i) ? " is-stage" : "") + (isBreak ? " is-break" : "");
+      return `<span class="${cls}">${esc(l) || "&nbsp;"}</span>`;
+    }).join("");   // ohne Trenner: die Spans sind Blöcke, ein \n gäbe eine zweite Leerzeile
+    hl.scrollTop = ed.scrollTop;
+  }
+
+  function drawStats() {
+    const spoken = state.slides.reduce((n, s) =>
+      n + s.blocks.filter(b => b.target === "notes")
+                  .reduce((m, b) => m + ((b.text || (b.lines || []).join(" ")).split(/\s+/).filter(Boolean).length), 0), 0);
+    $("stat-slides").textContent = state.slides.length === 1 ? "1 Folie" : `${state.slides.length} Folien`;
+    $("stat-words").textContent = `${ed.value.split(/\s+/).filter(Boolean).length} Wörter`;
+    $("stat-time").textContent = `ca. ${Math.max(1, Math.round(spoken / 130))} min gesprochen`;
+
+    const eng = state.fitPct.filter(p => p !== undefined && p <= TIGHT).length;
+    const btn = $("stat-tight");
+    btn.hidden = !eng;
+    if (eng) {
+      const schlimm = state.fitPct.some(p => p !== undefined && p <= OVER);
+      btn.textContent = eng === 1 ? "1 Folie zu voll" : `${eng} Folien zu voll`;
+      btn.style.color = schlimm ? "var(--accent)" : "var(--brass)";
+    }
+  }
+
+  let railDirty = true;
+
+  function render() {
+    const fm = parseMeta(ed.value);
+    state.meta = fm.meta;
+    state.metaEnd = fm.end;
+    applyMeta(fm.meta);
+    state.slides = parse(ed.value, state.opts, fm.end);
+    if (state.current >= state.slides.length) state.current = Math.max(0, state.slides.length - 1);
+    drawHighlight();
+    // Die Miniaturen zuerst: dort läuft der Auto-Fit und füllt fitPct,
+    // worauf Zählung und Bühnenkopf angewiesen sind.
+    if (railDirty) { drawRail(); railDirty = false; }
+    drawStats();
+    drawStage();
+  }
+
+  let renderTimer = null;
+  function scheduleRender(rebuildRail = true) {
+    if (rebuildRail) railDirty = true;
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(() => { render(); save(); }, 150);
+  }
+
+  function goto(i, moveCaret) {
+    state.current = Math.max(0, Math.min(state.slides.length - 1, i));
+    drawStage();
+    if (!moveCaret) return;
+    const slide = state.slides[state.current];
+    if (!slide) return;
+    const before = ed.value.split("\n").slice(0, slide.from).join("\n");
+    const pos = before.length + (slide.from ? 1 : 0);
+    ed.focus();
+    ed.setSelectionRange(pos, pos);
+    const lh = parseFloat(getComputedStyle(ed).lineHeight) || 25;
+    ed.scrollTop = Math.max(0, slide.from * lh - 70);
+    hl.scrollTop = ed.scrollTop;
+  }
+
+  function syncFromCaret() {
+    const line = ed.value.slice(0, ed.selectionStart).split("\n").length - 1;
+    const idx = state.slides.findIndex(s => line >= s.from && line <= s.to);
+    if (idx >= 0 && idx !== state.current) { state.current = idx; drawStage(); }
+  }
+
+  /* ---- Speichern ---- */
+
+  let savedTimer = null;
+
+  function writeBuffer() {
+    localStorage.setItem(KEY.doc, ed.value);
+    localStorage.setItem(KEY.opts, JSON.stringify(state.opts));
+    localStorage.setItem(KEY.assets, JSON.stringify(assetStore));
+    localStorage.setItem(KEY.name, state.fileName || "");
+  }
+
+  function save() {
+    const s = $("saved");
+    const flash = (txt) => {
+      s.textContent = txt;
+      s.style.opacity = "1";
+      clearTimeout(savedTimer);
+      savedTimer = setTimeout(() => { s.style.opacity = "0"; }, 1500);
+    };
+    try {
+      writeBuffer();
+      flash("gesichert");
+    } catch (e) {
+      // Platz schaffen und ein zweites Mal versuchen, bevor wir aufgeben
+      const freed = pruneAssets();
+      try {
+        writeBuffer();
+        flash(freed ? `${freed} verwaiste Bilder verworfen` : "gesichert");
+      } catch (e2) {
+        s.textContent = "Puffer voll – Bilder verkleinern oder Datei sichern";
+        s.style.opacity = "1";
+      }
+    }
+  }
+
+  function load() {
+    try {
+      const opts = JSON.parse(localStorage.getItem(KEY.opts) || "null");
+      if (opts) Object.assign(state.opts, opts);
+      const raw = JSON.parse(localStorage.getItem(KEY.assets) || "null");
+      if (raw && typeof raw === "object") {
+        // Altbestand war flach: alle Bilder in einem Topf
+        const flat = Object.values(raw).some(v => typeof v === "string");
+        assetStore = flat ? { "(ohne Datei)": raw } : raw;
+      }
+    } catch (e) { /* Voreinstellungen behalten */ }
+
+    state.opts.deck = normalizeDeck(state.opts.deck) || "heft";
+    state.fileName = localStorage.getItem(KEY.name) || null;
+    useAssetsFor(state.fileName);
+    ed.value = localStorage.getItem(KEY.doc) ?? $("sample").textContent.trim();
+    $("deck-theme").value = state.opts.deck;
+    $("aspect").value = state.opts.aspect;
+    $("split-heading").checked = state.opts.splitHeading;
+  }
+
+  /* ==========================================================
+     Dateien
+     Mit einem Datei-Handle schreibt Sichern in dieselbe Datei
+     zurück, statt eine Kopie in den Download-Ordner zu legen.
+     Fehlt die API oder verweigert der Nutzer, bleibt der alte
+     Weg als Rückfallebene bestehen – nur eben sichtbar.
+     ========================================================== */
+
+  const CAN_FS = typeof window.showOpenFilePicker === "function";
+  const MD_TYPE = [{ description: "Markdown",
+                     accept: { "text/markdown": [".md", ".markdown"], "text/plain": [".txt"] } }];
+
+  function drawDocName() {
+    const el = $("docname");
+    // „Kopie" heißt: Name bekannt, aber kein Schreibrecht – Sichern fragt nach einem Ort
+    el.textContent = !state.fileName ? "ohne Datei"
+                   : state.file ? state.fileName
+                   : state.fileName + " (Kopie)";
+    el.classList.toggle("no-file", !state.file);
+    el.classList.toggle("is-dirty", state.dirty && !!state.fileName);
+    el.title = state.file
+      ? "Sichern schreibt direkt in diese Datei"
+      : (CAN_FS ? "Noch keine Datei – Sichern legt eine an"
+                : "Dieser Browser kann nicht in Dateien zurückschreiben");
+  }
+
+  function markDirty() { if (!state.dirty) { state.dirty = true; drawDocName(); } }
+  function markClean() { state.dirty = false; drawDocName(); }
+
+  /* Ein neues Dokument fängt vorne an – sonst bliebe die Ansicht
+     auf der Folienposition des vorigen Textes stehen. */
+  function loadDocument(text, name, handle) {
+    ed.value = text;
+    state.current = 0;
+    state.file = handle || null;
+    state.fileName = name || null;
+    useAssetsFor(state.fileName);
+    ed.scrollTop = 0;
+    hl.scrollTop = 0;
+    ed.setSelectionRange(0, 0);
+    rail.scrollLeft = 0;
+    markClean();
+    scheduleRender();
+    if (name) toast(name + " geöffnet");
+  }
+
+  async function ensureWritable(h) {
+    const opt = { mode: "readwrite" };
+    try {
+      if ((await h.queryPermission(opt)) === "granted") return true;
+      return (await h.requestPermission(opt)) === "granted";
+    } catch (e) { return false; }
+  }
+
+  // Rückfallebene für Browser ohne File System Access
+  function pickViaInput() {
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".md,.markdown,.txt,text/markdown,text/plain";
+    inp.addEventListener("change", () => {
+      const f = inp.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => loadDocument(r.result, f.name);   // ohne Handle: nur Kopie
+      r.readAsText(f);
+    });
+    inp.click();
+  }
+
+  const SCAFFOLD = `---
+titel: Neuer Vortrag
+datum:
+thema: heft
+format: 16:9
+dauer: 20
+---
+
+#### Dachzeile
+
+# Schlagzeile
+
+## Vorspann
+
+Der erste Satz, den du sagst. Alles, was wie dieser Absatz aus normalem Fließtext besteht, bleibt Sprechernotiz und landet nie auf der Leinwand.
+
+---
+`;
+
+  async function forgetStoredHandle() {
+    const db = await idb();
+    if (!db) return;
+    try { db.transaction("handles", "readwrite").objectStore("handles").delete("last"); }
+    catch (e) { /* nicht schlimm */ }
+  }
+
+  function discardOk(frage) {
+    return !state.dirty || confirm(frage);
+  }
+
+  /* Setzt alles zusammen zurück: Text, Datei-Verknüpfung, Puffer und
+     die Bilder dieses Dokuments. Andere Dokumente bleiben unberührt. */
+  function newDocument() {
+    if (!discardOk("Ungesicherte Änderungen verwerfen und neu anfangen?")) return;
+    delete assetStore[docKey()];
+    try {
+      localStorage.removeItem(KEY.doc);
+      localStorage.removeItem(KEY.name);
+    } catch (e) { /* egal */ }
+    forgetStoredHandle();
+    loadDocument(SCAFFOLD, null, null);
+    toast("Neues Dokument");
+  }
+
+  function loadSample() {
+    if (!discardOk("Ungesicherte Änderungen verwerfen und die Anleitung laden?")) return;
+    loadDocument($("sample").textContent.trim(), null, null);
+    if (helpDlg.open) helpDlg.close();
+    toast("Anleitung geladen");
+  }
+
+  async function openFile() {
+    if (!CAN_FS) return pickViaInput();
+    try {
+      const [h] = await window.showOpenFilePicker({ types: MD_TYPE, multiple: false });
+      const f = await h.getFile();
+      loadDocument(await f.text(), f.name, h);
+      rememberHandle(h);
+    } catch (e) {
+      if (e && e.name === "AbortError") return;         // abgebrochen, kein Fehler
+      toast("Dateiwähler nicht nutzbar – öffne als Kopie.");
+      pickViaInput();
+    }
+  }
+
+  async function saveFile(asNew) {
+    const fallbackName = state.fileName || (docTitle() + ".md");
+
+    if (CAN_FS) {
+      try {
+        let h = state.file;
+        if (asNew || !h) {
+          h = await window.showSaveFilePicker({ suggestedName: fallbackName, types: MD_TYPE });
+        }
+        if (!(await ensureWritable(h))) return toast("Kein Schreibrecht für diese Datei.");
+        const stream = await h.createWritable();
+        await stream.write(ed.value);
+        await stream.close();
+
+        // Bei „Sichern unter" wandern die Bilder zum neuen Namen mit
+        const before = docKey();
+        state.file = h;
+        state.fileName = h.name;
+        if (before !== docKey()) {
+          assetStore[docKey()] = Object.assign({}, assetStore[before] || {}, assetStore[docKey()] || {});
+          if (before === "(ohne Datei)") delete assetStore[before];
+          useAssetsFor(state.fileName);
+        }
+
+        const freed = pruneAssets();     // verwaiste Bilder gehen beim Sichern weg
+        markClean();
+        rememberHandle(h);
+        save();
+        return toast(h.name + " gesichert"
+                     + (freed ? ` · ${freed} verwaiste ${freed === 1 ? "Bild" : "Bilder"} verworfen` : ""));
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+        toast("Schreiben fehlgeschlagen – lege eine Kopie im Download-Ordner ab.");
+      }
+    }
+    download(fallbackName, ed.value, "text/markdown");
+  }
+
+  /* Handle über Sitzungen hinweg merken. Geht nur über IndexedDB;
+     schlägt das fehl, verliert man nur den Komfort. */
+
+  function idb() {
+    return new Promise((res) => {
+      let done = false;
+      const finish = (v) => { if (!done) { done = true; res(v); } };
+      setTimeout(() => finish(null), 900);
+      try {
+        const q = indexedDB.open("souffleur", 1);
+        q.onupgradeneeded = () => { try { q.result.createObjectStore("handles"); } catch (e) {} };
+        q.onsuccess = () => finish(q.result);
+        q.onerror = () => finish(null);
+        q.onblocked = () => finish(null);
+      } catch (e) { finish(null); }
+    });
+  }
+
+  async function rememberHandle(h) {
+    const db = await idb();
+    if (!db) return;
+    try { db.transaction("handles", "readwrite").objectStore("handles").put(h, "last"); }
+    catch (e) { /* nicht schlimm */ }
+  }
+
+  async function restoreHandle() {
+    const db = await idb();
+    if (!db) return null;
+    return new Promise((res) => {
+      let done = false;
+      const finish = (v) => { if (!done) { done = true; res(v); } };
+      setTimeout(() => finish(null), 900);
+      try {
+        const r = db.transaction("handles", "readonly").objectStore("handles").get("last");
+        r.onsuccess = () => finish(r.result || null);
+        r.onerror = () => finish(null);
+      } catch (e) { finish(null); }
+    });
+  }
+
+  /* Beim Start: Handle zurückholen, aber nichts überschreiben und
+     nichts erfragen. Ohne erteilte Berechtigung merken wir uns nur
+     den Namen – das erste Sichern fragt dann nach. */
+  async function reattachFile() {
+    if (!CAN_FS) return;
+    const h = await restoreHandle();
+    if (!h) return;
+    state.file = h;
+    state.fileName = h.name;
+    try {
+      if ((await h.queryPermission({ mode: "readwrite" })) === "granted") {
+        const text = await (await h.getFile()).text();
+        // Nur übernehmen, wenn auf der Platte etwas anderes steht als im Puffer
+        if (text !== ed.value && !state.dirty) {
+          ed.value = text;
+          state.current = 0;
+          scheduleRender();
+        }
+      }
+    } catch (e) { /* Datei verschoben oder gelöscht – Name bleibt stehen */ }
+    drawDocName();
+  }
+
+  /* ==========================================================
+     Präsentation
+     ========================================================== */
+
+  const pres = { on: false, notes: false, t0: 0, elapsed: 0, running: false, tick: null };
+  const audience = { win: null, watch: null };
+
+  const liveAudience = () => !!(audience.win && !audience.win.closed);
+
+  /* ---- Publikumsfenster ----
+     Ein leer geöffnetes Fenster erbt den Ursprung des Öffners. Deshalb
+     lässt es sich direkt beschreiben – auch wenn die Datei über file://
+     läuft, wo BroadcastChannel und localStorage zwischen Fenstern
+     nicht greifen. */
+
+  function audienceDoc() {
+    // Eigene Schriften, falls vorhanden, in den Export uebernehmen
+    const localFonts = document.getElementById("local-fonts");
+    const css = document.getElementById("app-css").textContent
+              + (localFonts ? "\n" + localFonts.textContent : "");
+    return `<!doctype html><html lang="de"><head><meta charset="utf-8">
+<title>Souffleur – Bühne</title><style>${css}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+body.live{cursor:none}
+#aud{position:fixed;inset:0;display:grid;place-items:center}
+/* Aus der Mitte skalieren: transform ändert die Layoutgröße nicht, die Box
+   bleibt 1280x720. Von der linken oberen Ecke aus zu skalieren würde die
+   Folie aus dem zentrierten Kasten herausschieben. */
+#aud > div{transform-origin:center center}
+.hold{display:grid;gap:16px;justify-items:center;text-align:center;font-family:var(--font-ui)}
+.hold i{display:block;width:24px;height:3px;background:#E2001A}
+.hold b{font-family:var(--font-display);font-size:40px;font-weight:700;color:#EDEBE5;letter-spacing:-.02em}
+.hold p{margin:0;font-size:13.5px;line-height:1.75;color:#78766F;max-width:38ch}
+.hold kbd{font-family:var(--font-mono);font-size:11px;border:1px solid #35332F;padding:1px 6px;color:#A5A29A}
+</style></head><body><div id="aud"></div></body></html>`;
+  }
+
+  async function openAudience() {
+    let features = "width=1280,height=760,menubar=no,toolbar=no,location=no";
+    // Kennt der Browser die Bildschirme, landet das Fenster gleich richtig.
+    try {
+      if (window.getScreenDetails) {
+        const det = await window.getScreenDetails();
+        const ext = det.screens.find(s => !s.isPrimary);
+        if (ext) features = `left=${ext.availLeft},top=${ext.availTop},`
+                          + `width=${ext.availWidth},height=${ext.availHeight},menubar=no,toolbar=no`;
+      }
+    } catch (e) { /* Keine Berechtigung – dann schiebt man es eben selbst hinüber. */ }
+
+    const w = window.open("", "souffleur-buehne", features);
+    if (!w) return toast("Fenster blockiert. Bitte Pop-ups für diese Seite erlauben.");
+
+    w.document.open();
+    w.document.write(audienceDoc());
+    w.document.close();
+    audience.win = w;
+
+    w.addEventListener("keydown", onKey);
+    w.addEventListener("resize", paintAudience);
+    w.addEventListener("pagehide", forgetAudience);
+    // Beim Wechsel ins Vollbild kommt resize teils vor der neuen Größe
+    w.document.addEventListener("fullscreenchange", () => setTimeout(paintAudience, 60));
+
+    clearInterval(audience.watch);
+    audience.watch = setInterval(() => { if (!liveAudience()) forgetAudience(); }, 800);
+
+    $("btn-screen").textContent = "Bühne schließen";
+    paintAudience();
+    if (pres.on) drawPresent();
+    toast("Bühne geöffnet – Fenster auf den Beamer ziehen, dort F für Vollbild.");
+  }
+
+  function forgetAudience() {
+    clearInterval(audience.watch);
+    audience.watch = null;
+    audience.win = null;
+    $("btn-screen").textContent = "Zweiter Bildschirm";
+    if (pres.on) drawPresent();
+  }
+
+  function closeAudience() {
+    if (liveAudience()) { try { audience.win.close(); } catch (e) { /* egal */ } }
+    forgetAudience();
+  }
+
+  function paintAudience() {
+    if (!liveAudience()) return;
+    const w = audience.win;
+    const host = w.document.getElementById("aud");
+    if (!host) return;
+
+    const slide = state.slides[state.current];
+    w.document.body.classList.toggle("live", pres.on);
+
+    if (!pres.on || !slide) {
+      host.style.visibility = "visible";
+      host.innerHTML = `<div class="hold"><i></i><b>Souffleur</b>
+        <p>Dieses Fenster auf den Beamer ziehen, dort <kbd>F</kbd> für Vollbild.
+           Danach im Hauptfenster auf <em>Präsentieren</em>.</p></div>`;
+      return;
+    }
+
+    const [vw, vh] = virt();
+    const k = Math.min(w.innerWidth / vw, w.innerHeight / vh);
+    host.innerHTML = `<div style="transform:scale(${k});width:${vw}px;height:${vh}px">${slideHTML(slide, state.current)}</div>`;
+    fit(host.querySelector(".slide"));
+    host.style.visibility = present.classList.contains("blackout") ? "hidden" : "visible";
+  }
+
+  /* ---- Referentenkonsole ---- */
+
+  function paintInto(host, index, maxW, maxH) {
+    const [vw, vh] = virt();
+    const slide = state.slides[index];
+    const k = Math.min(maxW / vw, maxH / vh);
+    host.style.width = Math.round(vw * k) + "px";
+    host.style.height = Math.round(vh * k) + "px";
+    host.classList.toggle("is-last", !slide);
+    if (!slide) { host.innerHTML = `<span>Ende</span>`; return; }
+    host.innerHTML = `<div style="transform:scale(${k});width:${vw}px;height:${vh}px">${slideHTML(slide, index)}</div>`;
+    fit(host.querySelector(".slide"));
+  }
+
+  function drawConsole() {
+    paintInto($("con-now"),  state.current,
+              $("con-now").parentElement.clientWidth,  window.innerHeight * 0.58);
+    paintInto($("con-next"), state.current + 1,
+              $("con-next").parentElement.clientWidth, window.innerHeight * 0.26);
+
+    const nh = notesHTML(state.slides[state.current]);
+    $("con-notes").innerHTML = nh || `<p style="opacity:.4">keine Notizen</p>`;
+    $("con-count").textContent = `${state.current + 1} / ${state.slides.length}`;
+  }
+
+  /* ---- Folienübersicht ---- */
+
+  const ov = { on: false, sel: 0 };
+
+  function scaleOverview() {
+    const [vw, vh] = virt();
+    $("ov-grid").querySelectorAll(".ov-frame").forEach(frame => {
+      const k = (frame.clientWidth || 210) / vw;
+      const inner = frame.firstElementChild;
+      inner.style.transform = `scale(${k})`;
+      inner.style.width = vw + "px";
+      inner.style.height = vh + "px";
+      frame.style.height = Math.round(vh * k) + "px";
+      fit(frame.querySelector(".slide"));
+    });
+  }
+
+  function drawOverview() {
+    const grid = $("ov-grid");
+    grid.innerHTML = "";
+    state.slides.forEach((s, i) => {
+      const btn = document.createElement("button");
+      btn.className = "ov-item" + (i === ov.sel ? " is-sel" : "") + (i === state.current ? " is-now" : "");
+      btn.innerHTML =
+        `<div class="ov-frame"><div>${slideHTML(s, i)}</div></div>
+         <div class="ov-cap"><span>${String(i + 1).padStart(2, "0")}</span>` +
+        (i === state.current ? `<span class="now-tag">jetzt</span>` : "") + `</div>`;
+      btn.addEventListener("click", () => { ov.sel = i; jumpFromOverview(); });
+      grid.appendChild(btn);
+    });
+    scaleOverview();
+  }
+
+  // Spaltenzahl aus dem Raster ablesen, statt sie zu erraten
+  function ovCols() {
+    const kids = $("ov-grid").children;
+    if (!kids.length) return 1;
+    const top = kids[0].offsetTop;
+    let n = 0;
+    for (const k of kids) { if (k.offsetTop !== top) break; n++; }
+    return Math.max(1, n);
+  }
+
+  function refreshSel() {
+    const kids = $("ov-grid").children;
+    for (let i = 0; i < kids.length; i++) kids[i].classList.toggle("is-sel", i === ov.sel);
+    if (kids[ov.sel]) kids[ov.sel].scrollIntoView({ block: "nearest" });
+  }
+
+  function moveSel(d) {
+    ov.sel = Math.max(0, Math.min(state.slides.length - 1, ov.sel + d));
+    refreshSel();
+  }
+
+  function openOverview() {
+    if (!pres.on || !state.slides.length) return;
+    ov.on = true;
+    ov.sel = state.current;
+    $("overview").hidden = false;
+    drawOverview();
+    if ($("ov-grid").children[ov.sel]) $("ov-grid").children[ov.sel].scrollIntoView({ block: "nearest" });
+  }
+
+  function closeOverview() {
+    ov.on = false;
+    $("overview").hidden = true;
+  }
+
+  function jumpFromOverview() {
+    state.current = ov.sel;
+    closeOverview();
+    drawPresent();
+  }
+
+  function drawPresent() {
+    if (!state.slides.length) return;
+    const live = liveAudience();
+
+    $("console").hidden = !live;
+    pStage.hidden = live;
+    $("phud").hidden = live;
+    pProgress.hidden = live;
+
+    if (live) {
+      pNotes.hidden = true;
+      drawConsole();
+      paintAudience();
+      timerTick();
+      return;
+    }
+
+    const slide = state.slides[state.current];
+    if (!slide) return;
+    const [vw, vh] = virt();
+    const k = Math.min(window.innerWidth / vw, window.innerHeight / vh);
+    pStage.innerHTML = `<div style="transform:scale(${k});transform-origin:top left;width:${vw}px;height:${vh}px">${slideHTML(slide, state.current)}</div>`;
+    pStage.style.width = Math.round(vw * k) + "px";
+    pStage.style.height = Math.round(vh * k) + "px";
+    fit(pStage.querySelector(".slide"));
+
+    const nh = notesHTML(slide);
+    pNotes.innerHTML = `<div class="nlabel">Folie ${state.current + 1} von ${state.slides.length}</div>`
+                     + (nh || `<p style="opacity:.45">keine Notizen</p>`);
+    pNotes.hidden = !pres.notes;
+    pCount.textContent = `${state.current + 1} / ${state.slides.length}`;
+    pProgress.style.width = ((state.current + 1) / state.slides.length * 100) + "%";
+  }
+
+  const fmt = (ms) => {
+    const s = Math.floor(ms / 1000);
+    return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  };
+
+  /* Sollzeit aus den Kopfdaten: Wie weit müsste ich bei dieser Folie sein?
+     Bezug ist der Anfang der aktuellen Folie, nicht ihr Ende – sonst läge
+     man auf der ersten Folie sofort im Rückstand. */
+  function drawPace(ms) {
+    const el = $("con-pace");
+    const minutes = parseFloat(String(state.meta.dauer || "").replace(",", "."));
+    if (!minutes || minutes <= 0 || state.slides.length < 2) {
+      el.textContent = "";
+      el.className = "con-pace";
+      return;
+    }
+    const soll = state.current / (state.slides.length - 1) * minutes * 60000;
+    const diff = soll - ms;                       // positiv = Vorsprung
+    const secs = Math.round(Math.abs(diff) / 1000);
+    const txt = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
+    el.textContent = (diff >= 0 ? "+" : "−") + txt + " · Soll " + minutes + " min";
+    el.className = "con-pace " + (Math.abs(diff) < 30000 ? "" : diff > 0 ? "ahead" : "behind");
+  }
+
+  function timerTick() {
+    const ms = pres.elapsed + (pres.running ? performance.now() - pres.t0 : 0);
+    const t = fmt(ms);
+    pTimer.textContent = t;
+    pTimer.classList.toggle("running", pres.running);
+    const con = $("con-time");
+    con.textContent = t;
+    con.classList.toggle("running", pres.running);
+    drawPace(ms);
+  }
+
+  function startPresent() {
+    if (!state.slides.length) return toast("Noch nichts zu zeigen – schreib zuerst etwas.");
+    pres.on = true;
+    present.hidden = false;
+    present.classList.remove("blackout");
+    drawPresent();
+    pres.tick = setInterval(timerTick, 250);
+    if (!pres.running) { pres.running = true; pres.t0 = performance.now(); }
+    // Bei zwei Bildschirmen bleibt das Hauptfenster wie es ist: dort steht
+    // die Konsole, das Vollbild gehört dem Publikumsfenster.
+    if (!liveAudience()) { try { present.requestFullscreen?.(); } catch (e) { /* Overlay genügt */ } }
+  }
+
+  function stopPresent() {
+    pres.on = false;
+    closeOverview();
+    present.hidden = true;
+    present.classList.remove("blackout");
+    clearInterval(pres.tick);
+    if (pres.running) { pres.elapsed += performance.now() - pres.t0; pres.running = false; }
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* egal */ }
+    paintAudience();   // Bühne bleibt offen und zeigt wieder den Wartebildschirm
+    drawStage();
+  }
+
+  function step(d) {
+    const next = state.current + d;
+    if (next < 0 || next >= state.slides.length) return;
+    state.current = next;
+    drawPresent();
+  }
+
+  /* ==========================================================
+     Export
+     ========================================================== */
+
+  function download(name, content, type) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function docTitle() {
+    const clean = (s) => s.replace(/[^\p{L}\p{N} \-_]/gu, "").trim();
+    if (state.meta.titel) return clean(state.meta.titel) || "Praesentation";
+    const h = state.slides.flatMap(s => s.blocks).find(b => b.kind === "h" && b.target === "stage" && b.level <= 2);
+    return (h ? clean(h.text) : "") || "Praesentation";
+  }
+
+  function exportHTML() {
+    if (!state.slides.length) return toast("Nichts zu exportieren.");
+    const [vw, vh] = virt();
+    // Eigene Schriften, falls vorhanden, in den Export uebernehmen
+    const localFonts = document.getElementById("local-fonts");
+    const css = document.getElementById("app-css").textContent
+              + (localFonts ? "\n" + localFonts.textContent : "");
+    const slides = state.slides.map((s, i) => `<div class="ex-slide">${slideHTML(s, i)}</div>`).join("\n");
+    const notes = JSON.stringify(state.slides.map(s => notesHTML(s)));
+
+    const html =
+`<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(docTitle())}</title>
+<style>${css}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+.ex-stage{position:fixed;inset:0;display:grid;place-items:center}
+.ex-slide{display:none;transform-origin:center center}
+.ex-slide.on{display:block}
+.ex-bar{position:fixed;left:0;bottom:0;height:3px;background:#E2001A;transition:width .2s}
+.ex-hud{position:fixed;top:16px;right:20px;font-family:var(--font-ui);font-size:12px;font-weight:600;letter-spacing:.1em;color:rgba(255,255,255,.45);background:rgba(6,6,6,.6);padding:6px 13px;font-variant-numeric:tabular-nums}
+.ex-notes{position:fixed;left:0;right:0;bottom:0;max-height:33vh;overflow:auto;padding:18px 32px;background:rgba(6,6,6,.95);color:#DEDBD3;font-family:var(--font-serif);font-size:19px;line-height:1.55;border-top:2px solid #E2001A}
+.ex-notes[hidden]{display:none}.ex-notes p{margin:0 0 .6em;max-width:80ch}
+@media print{html,body{background:#fff;overflow:visible;height:auto}.ex-stage{position:static;display:block}
+.ex-slide{display:block!important;transform:none!important;page-break-after:always;break-after:page}
+.ex-hud,.ex-bar,.ex-notes{display:none!important}@page{size:${vw}px ${vh}px;margin:0}}
+</style></head><body>
+<div class="ex-stage">${slides}</div>
+<div class="ex-hud"><span id="c">1</span> / ${state.slides.length} &nbsp;·&nbsp; N</div>
+<div class="ex-notes" id="n" hidden></div>
+<div class="ex-bar" id="b" style="width:0"></div>
+<script>
+var S=[].slice.call(document.querySelectorAll('.ex-slide')),NOTES=${notes},i=0,showNotes=false;
+var VW=${vw},VH=${vh};
+function fit(){var k=Math.min(innerWidth/VW,innerHeight/VH);
+S.forEach(function(s){s.style.transform='scale('+k+')';s.style.width=VW+'px';s.style.height=VH+'px'});}
+function go(n){i=Math.max(0,Math.min(S.length-1,n));
+S.forEach(function(s,j){s.classList.toggle('on',j===i)});
+document.getElementById('c').textContent=i+1;
+document.getElementById('b').style.width=((i+1)/S.length*100)+'%';
+var e=document.getElementById('n');
+e.innerHTML=NOTES[i]||'<p style="opacity:.45">keine Notizen</p>';e.hidden=!showNotes;}
+addEventListener('keydown',function(e){var k=e.key;
+if(k==='ArrowRight'||k===' '||k==='PageDown'||k==='ArrowDown'){e.preventDefault();go(i+1)}
+else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(i-1)}
+else if(k==='Home'){go(0)}else if(k==='End'){go(S.length-1)}
+else if(k==='n'||k==='N'){showNotes=!showNotes;go(i)}
+else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}});
+addEventListener('click',function(e){if(e.target.closest('.ex-notes'))return;go(i+(e.clientX<innerWidth*0.25?-1:1))});
+addEventListener('resize',fit);fit();go(0);
+<\/script></body></html>`;
+
+    download(docTitle() + ".html", html, "text/html");
+    toast("HTML exportiert – eine Datei, läuft überall.");
+  }
+
+  /* fit() braucht messbare Elemente. Der Druckbereich ist am Bildschirm
+     ausgeblendet — dort ergibt jede Messung null, fits() schlaegt immer
+     fehl und die Halbierungssuche faehrt die Schrift auf den Anschlag.
+     Also kurz ausserhalb des Bildes sichtbar machen: visibility:hidden
+     bleibt im Layout, display:none nicht. */
+  function fitImDruckbereich(root) {
+    const vorher = root.getAttribute("style") || "";
+    root.style.cssText = "display:block;position:absolute;left:-99999px;top:0;visibility:hidden";
+    root.querySelectorAll(".slide").forEach(fit);
+    root.setAttribute("style", vorher);
+  }
+
+  function setPageRule(css) {
+    let rule = $("page-rule");
+    if (!rule) {
+      rule = document.createElement("style");
+      rule.id = "page-rule";
+      document.head.appendChild(rule);
+    }
+    rule.textContent = css;
+  }
+
+  // Reines Foliendeck: eine Folie füllt eine Seite randlos
+  function printDeck() {
+    if (!state.slides.length) return toast("Nichts zu drucken.");
+    const [vw, vh] = virt();
+    const root = $("printroot");
+    root.innerHTML = state.slides.map((s, i) =>
+      `<div class="print-page" style="width:${vw}px;height:${vh}px">${slideHTML(s, i)}</div>`).join("");
+    setPageRule(`@page { size: ${vw}px ${vh}px; margin: 0 }`);
+    fitImDruckbereich(root);
+    setTimeout(() => window.print(), 80);
+  }
+
+  /* Handout fürs Protokoll: Folie oben, gesprochener Text darunter.
+     Die Seitenhöhe wird bewusst nicht festgesetzt – lange Notizen
+     laufen so auf eine Folgeseite, statt abgeschnitten zu werden. */
+  function printNotes() {
+    if (!state.slides.length) return toast("Nichts zu drucken.");
+    const [vw, vh] = virt();
+    const W = 484;                       // 128 mm bei 96 dpi – Satzbreite
+    const k = W / vw;
+    const kopf = [state.meta.titel, state.meta.datum].filter(Boolean).join(" · ") || docTitle();
+
+    $("printroot").innerHTML = state.slides.map((s, i) => `
+      <section class="pn-page">
+        <div class="pn-head">
+          <span>${esc(kopf)}</span>
+          <span class="pn-num">Folie ${i + 1} von ${state.slides.length}</span>
+        </div>
+        <div class="pn-slide" style="width:${Math.round(vw * k)}px;height:${Math.round(vh * k)}px">
+          <div style="transform:scale(${k});width:${vw}px;height:${vh}px">${slideHTML(s, i)}</div>
+        </div>
+        <div class="pn-notes">${notesHTML(s) || `<p class="pn-empty">keine Notizen</p>`}</div>
+      </section>`).join("");
+
+    // Asymmetrisch: 58 mm Aussenrand bleiben fuer Notizen im Termin frei
+    setPageRule("@page { size: A4 portrait; margin: 20mm 58mm 26mm 24mm }");
+    fitImDruckbereich($("printroot"));
+    setTimeout(() => window.print(), 80);
+  }
+
+  /* ---- Bilder ---- */
+
+  function insertAtCaret(text) {
+    const a = ed.selectionStart, b = ed.selectionEnd, v = ed.value;
+    ed.value = v.slice(0, a) + text + v.slice(b);
+    const pos = a + text.length;
+    ed.setSelectionRange(pos, pos);
+    scheduleRender();
+  }
+
+  function addImages(files) {
+    const imgs = [...files].filter(f => f.type.startsWith("image/"));
+    if (!imgs.length) return false;
+    imgs.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const ext = (file.name.match(/\.\w+$/) || [".png"])[0];
+        let name, n = 1;
+        do { name = "@bild-" + n++ + ext; } while (state.assets[name]);
+        state.assets[name] = reader.result;
+        insertAtCaret(`\n![${file.name.replace(/\.\w+$/, "")}](${name})\n`);
+      };
+      reader.readAsDataURL(file);
+    });
+    return true;
+  }
+
+  /* ==========================================================
+     Ereignisse
+     ========================================================== */
+
+  ed.addEventListener("input", () => { markDirty(); scheduleRender(); });
+  ed.addEventListener("scroll", () => { hl.scrollTop = ed.scrollTop; hl.scrollLeft = ed.scrollLeft; });
+  ed.addEventListener("click", syncFromCaret);
+  ed.addEventListener("keyup", (e) => { if (e.key.startsWith("Arrow") || e.key === "Enter") syncFromCaret(); });
+  ed.addEventListener("keydown", (e) => { if (e.key === "Tab") { e.preventDefault(); insertAtCaret("  "); } });
+
+  ed.addEventListener("dragover", (e) => e.preventDefault());
+  ed.addEventListener("drop", async (e) => {
+    const files = e.dataTransfer?.files;
+    if (!files || !files.length) return;
+    e.preventDefault();
+    if (addImages(files)) return;
+
+    const f = files[0];
+    if (!/\.(md|markdown|txt)$/i.test(f.name)) return;
+
+    // Beim Ziehen gibt es unter Umständen ein Handle dazu – dann ist die
+    // Datei auch beschreibbar und nicht nur eine Kopie.
+    let handle = null;
+    const item = e.dataTransfer.items && e.dataTransfer.items[0];
+    if (item && typeof item.getAsFileSystemHandle === "function") {
+      try {
+        const h = await item.getAsFileSystemHandle();
+        if (h && h.kind === "file") { handle = h; rememberHandle(h); }
+      } catch (err) { /* dann eben als Kopie */ }
+    }
+    loadDocument(await f.text(), f.name, handle);
+  });
+  ed.addEventListener("paste", (e) => {
+    const files = e.clipboardData?.files;
+    if (files && files.length && addImages(files)) e.preventDefault();
+  });
+
+  // Gibt es Kopfdaten, wird die Einstellung dorthin geschrieben – sonst
+  // würde applyMeta() sie beim nächsten Durchlauf sofort überstimmen.
+  function onControl(key, value, apply) {
+    apply();
+    setMeta(key, value);
+    railDirty = true;
+    render();
+    save();
+  }
+
+  $("deck-theme").addEventListener("change", (e) =>
+    onControl("thema", e.target.value, () => { state.opts.deck = e.target.value; }));
+  $("aspect").addEventListener("change", (e) =>
+    onControl("format", e.target.value, () => { state.opts.aspect = e.target.value; }));
+  $("split-heading").addEventListener("change", (e) =>
+    onControl("folie-je-ueberschrift", e.target.checked ? "ja" : "nein",
+              () => { state.opts.splitHeading = e.target.checked; }));
+
+  $("btn-present").addEventListener("click", startPresent);
+  $("btn-print").addEventListener("click", printDeck);
+  $("btn-handout").addEventListener("click", printNotes);
+  $("btn-export").addEventListener("click", exportHTML);
+  // Zur schlimmsten Folie springen, nicht zur ersten – dort lohnt Kürzen am meisten
+  $("stat-tight").addEventListener("click", () => {
+    let worst = -1, low = 2;
+    state.fitPct.forEach((p, i) => { if (p !== undefined && p < low) { low = p; worst = i; } });
+    if (worst >= 0) goto(worst, true);
+  });
+
+  $("btn-new").addEventListener("click", newDocument);
+  $("btn-sample").addEventListener("click", loadSample);
+  $("btn-open").addEventListener("click", openFile);
+  $("btn-save").addEventListener("click", () => saveFile(false));
+  $("btn-saveas").addEventListener("click", () => saveFile(true));
+  $("btn-help").addEventListener("click", () => helpDlg.showModal());
+  $("help-close").addEventListener("click", () => helpDlg.close());
+  $("btn-screen").addEventListener("click", () => liveAudience() ? closeAudience() : openAudience());
+
+  // Bühne nicht verwaist zurücklassen
+  window.addEventListener("pagehide", () => { if (liveAudience()) { try { audience.win.close(); } catch (e) {} } });
+
+  // Nur warnen, wenn es eine Datei gibt, die von der Anzeige abweicht.
+  // Ohne Datei ist ohnehin alles im lokalen Puffer gesichert.
+  window.addEventListener("beforeunload", (e) => {
+    if (state.dirty && state.file) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  // Vollbild gilt immer dem Fenster, in dem die Taste gedrückt wurde.
+  function toggleFullscreen(inAudience) {
+    try {
+      if (inAudience && liveAudience()) {
+        const d = audience.win.document;
+        d.fullscreenElement ? d.exitFullscreen() : d.documentElement.requestFullscreen();
+      } else {
+        document.fullscreenElement ? document.exitFullscreen() : present.requestFullscreen();
+      }
+    } catch (err) { /* egal */ }
+  }
+
+  // Hängt an beiden Fenstern, damit man von der Bühne aus blättern kann.
+  function onKey(e) {
+    const fromAudience = liveAudience() && e.view === audience.win;
+
+    if (pres.on && ov.on) {
+      const k = e.key, cols = ovCols();
+      if (k === "Escape" || k === "g" || k === "G") { e.preventDefault(); closeOverview(); }
+      else if (k === "ArrowRight") { e.preventDefault(); moveSel(1); }
+      else if (k === "ArrowLeft")  { e.preventDefault(); moveSel(-1); }
+      else if (k === "ArrowDown")  { e.preventDefault(); moveSel(cols); }
+      else if (k === "ArrowUp")    { e.preventDefault(); moveSel(-cols); }
+      else if (k === "Home")       { e.preventDefault(); ov.sel = 0; refreshSel(); }
+      else if (k === "End")        { e.preventDefault(); ov.sel = state.slides.length - 1; refreshSel(); }
+      else if (k === "Enter" || k === " ") { e.preventDefault(); jumpFromOverview(); }
+      return;
+    }
+
+    if (pres.on) {
+      const k = e.key;
+      if (k === "Escape") { e.preventDefault(); stopPresent(); }
+      else if (k === "g" || k === "G") { e.preventDefault(); openOverview(); }
+      else if (k === "ArrowRight" || k === " " || k === "PageDown" || k === "ArrowDown") { e.preventDefault(); step(1); }
+      else if (k === "ArrowLeft" || k === "PageUp" || k === "ArrowUp") { e.preventDefault(); step(-1); }
+      else if (k === "Home") { state.current = 0; drawPresent(); }
+      else if (k === "End") { state.current = state.slides.length - 1; drawPresent(); }
+      else if (k === "n" || k === "N") { pres.notes = !pres.notes; drawPresent(); }
+      else if (k === "b" || k === "B") { present.classList.toggle("blackout"); paintAudience(); }
+      else if (k === "t" || k === "T") {
+        if (pres.running) { pres.elapsed += performance.now() - pres.t0; pres.running = false; }
+        else { pres.t0 = performance.now(); pres.running = true; }
+        timerTick();
+      }
+      else if (k === "r" || k === "R") { pres.elapsed = 0; pres.t0 = performance.now(); timerTick(); }
+      else if (k === "f" || k === "F") { e.preventDefault(); toggleFullscreen(fromAudience); }
+      return;
+    }
+
+    if (fromAudience) {
+      if (e.key === "f" || e.key === "F") { e.preventDefault(); toggleFullscreen(true); }
+      else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startPresent(); }
+      return;
+    }
+    const cmd = e.metaKey || e.ctrlKey;
+    if (cmd && e.key === "Enter") { e.preventDefault(); startPresent(); }
+    if (cmd && (e.key === "p" || e.key === "P")) { e.preventDefault(); e.shiftKey ? printNotes() : printDeck(); }
+    if (cmd && e.key === "o") { e.preventDefault(); openFile(); }
+    // ⌘S abfangen, sonst will der Browser die Seite speichern
+    if (cmd && (e.key === "s" || e.key === "S")) { e.preventDefault(); saveFile(e.shiftKey); }
+    if (e.key === "?" && e.target !== ed) { e.preventDefault(); helpDlg.showModal(); }
+  }
+
+  document.addEventListener("keydown", onKey);
+
+  present.addEventListener("click", (e) => {
+    if (e.target.closest(".present-notes")) return;
+    step(e.clientX < window.innerWidth * 0.25 ? -1 : 1);
+  });
+
+  document.addEventListener("fullscreenchange", () => { if (pres.on) setTimeout(drawPresent, 60); });
+
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (pres.on) { drawPresent(); if (ov.on) scaleOverview(); }
+      else { railDirty = false; drawStage(); }
+    }, 100);
+  });
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toastEl.classList.remove("show"), 2600);
+  }
+
+  /* ---- Start ---- */
+  document.documentElement.lang = "de";   // Silbentrennung braucht die Sprache
+  // Webschriften liegen beim Start noch nicht an, also nach dem Laden erneut
+  // messen: Dickten fuer den Randausgleich und die Anzeige der Schriftrollen.
+  document.fonts.ready.then(() => {
+    dickteCache.clear(); reportFonts(); railDirty = true; render();
+  });
+  reportFonts();
+  load();
+  drawDocName();
+  render();
+  if (!CAN_FS) $("btn-saveas").hidden = true;
+  reattachFile();   // asynchron, blockiert den Start nicht
+})();
+</script>

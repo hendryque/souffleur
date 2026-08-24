@@ -1,0 +1,16 @@
+# Local font bindings
+fonts.local.js
+.githooks/patterns.local.txt
+
+# Local documents and renders
+decks/
+_vorschau/
+*.local.md
+
+# Editor and OS artifacts
+*.bak*
+*.orig
+.DS_Store
+
+# Tool configuration
+.claude/

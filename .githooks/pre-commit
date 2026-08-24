@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Keeps licensed font bindings out of the repository.
+
+Checks the mechanism, not a list of families: licensed faces are bound with
+local() in fonts.local.js, and that file is gitignored. Any other staged file
+containing a local() binding is most likely a leak.
+
+Reads the content of staged files, not the working copy, so partial staging
+cannot bypass the check.
+
+Add your own patterns, one regular expression per line, in
+.githooks/patterns.local.txt. That file is gitignored, so private names stay
+private.
+
+Enable:  git config core.hooksPath .githooks
+Bypass:  git commit --no-verify
+"""
+import os, re, subprocess, sys
+
+PATTERNS = [r'local\(\s*["\']']
+ALLOWED = {"fonts.local.example.js", ".githooks/pre-commit", "README.md"}
+
+extra = os.path.join(os.path.dirname(__file__), "patterns.local.txt")
+if os.path.exists(extra):
+    with open(extra, encoding="utf-8") as fh:
+        PATTERNS += [l.strip() for l in fh if l.strip() and not l.startswith("#")]
+
+RX = re.compile("|".join(PATTERNS))
+
+def staged():
+    out = subprocess.run(["git", "diff", "--cached", "--name-only",
+                          "--diff-filter=ACM"], capture_output=True, text=True)
+    return [f for f in out.stdout.split("\n") if f.strip()]
+
+hits = []
+for path in staged():
+    if path in ALLOWED or path.lower().endswith((".png", ".jpg", ".pdf", ".woff2", ".otf", ".ttf")):
+        continue
+    blob = subprocess.run(["git", "show", ":" + path],
+                          capture_output=True, text=True, errors="replace")
+    if blob.returncode:
+        continue
+    for num, line in enumerate(blob.stdout.split("\n"), 1):
+        found = RX.search(line)
+        if found:
+            hits.append(f"  {path}:{num}  {line.strip()[:78]}")
+
+if hits:
+    sys.stderr.write("\npre-commit: font bindings found outside fonts.local.js\n\n")
+    sys.stderr.write("\n".join(hits[:40]) + "\n")
+    if len(hits) > 40:
+        sys.stderr.write(f"  ... and {len(hits) - 40} more\n")
+    sys.stderr.write("\nDoes this belong in fonts.local.js? That file is not tracked.\n")
+    sys.stderr.write("Commit anyway: git commit --no-verify\n\n")
+    sys.exit(1)
