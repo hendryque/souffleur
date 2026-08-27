@@ -22,7 +22,7 @@ open souffleur.html
   <a href="docs/heft.png"><img src="docs/heft.png" width="400" alt="heft: a serif headline under a short red rule, on paper white"></a>
   <a href="docs/kontra.png"><img src="docs/kontra.png" width="400" alt="kontra: a heading and a list in the same setting, on a dark ground"></a>
   <a href="docs/plakat.png"><img src="docs/plakat.png" width="400" alt="plakat: condensed capitals filling the slide"></a>
-  <a href="docs/professional.png"><img src="docs/professional.png" width="400" alt="professional: a two column table, grotesque headline over serif text"></a>
+  <a href="docs/professional.png"><img src="docs/professional.png" width="400" alt="professional: a blue kicker above a grotesque headline, with serif list items"></a>
 </p>
 
 ## What it does
